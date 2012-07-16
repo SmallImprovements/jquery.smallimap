@@ -41,7 +41,7 @@
       dt = now - @lastRefresh
       @lastRefresh = now
 
-     # console.log("eventQueue=" + @eventQueue)
+      #console.log("eventQueue=" + @eventQueue)
       ongoingEvents = []
       for event in @eventQueue when event.refresh dt
         console.log("info")
@@ -86,7 +86,7 @@
     longToX: (longitude) ->
       Math.floor((longitude + 180) * @width / 360 + 0.5) # <- round
 
-    latToX: (latitude) ->
+    latToY: (latitude) ->
       Math.floor((-latitude + 90) * @height / 180 + 0.5) # <- round
 
     xToLong: (x) ->
@@ -230,6 +230,7 @@
       timeElapsed += dt
       @refresh @easing(timeElapsed/duration)
       if timeElapsed > duration
+        console.log("timeElapsed > duration")
         @callback?()
         false
       else
@@ -271,15 +272,18 @@
     constructor: (@smallimap, @callback) ->
       @queue = []
 
-    enqueue: (effect) ->
-      @queue.push(effect)
+    enqueue: (effect) =>
+      console.log("enqueued: " + effect)
+      @queue.push effect
 
     init: () =>
       "no init, dude"
 
     refresh: (dt) =>
       ongoingEffects = []
-      for effect in @queue when effect.refresh dt
+      # console.log("effects=" + @queue)
+      for effect in @queue when effect.update dt
+        console.log("effect getting pushed")
         ongoingEffects.push effect
       @queue = ongoingEffects
       @queue.length > 0
@@ -295,8 +299,8 @@
       @duration = options.duration || 1024
 
     init: () =>
-      x = longToX @longitude
-      y = latToY @latitude
+      x = @smallimap.longToX @longitude
+      y = @smallimap.latToY @latitude
 
       for i in [-@radius..@radius]
         for j in [-@radius..@radius]

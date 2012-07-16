@@ -149,7 +149,7 @@
         return Math.floor((longitude + 180) * this.width / 360 + 0.5);
       };
 
-      Smallimap.prototype.latToX = function(latitude) {
+      Smallimap.prototype.latToY = function(latitude) {
         return Math.floor((-latitude + 90) * this.height / 180 + 0.5);
       };
 
@@ -339,6 +339,7 @@
         timeElapsed += dt;
         this.refresh(this.easing(timeElapsed / duration));
         if (timeElapsed > duration) {
+          console.log("timeElapsed > duration");
           if (typeof this.callback === "function") {
             this.callback();
           }
@@ -422,10 +423,13 @@
 
         this.init = __bind(this.init, this);
 
+        this.enqueue = __bind(this.enqueue, this);
+
         this.queue = [];
       }
 
       Event.prototype.enqueue = function(effect) {
+        console.log("enqueued: " + effect);
         return this.queue.push(effect);
       };
 
@@ -439,9 +443,11 @@
         _ref = this.queue;
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           effect = _ref[_i];
-          if (effect.refresh(dt)) {
-            ongoingEffects.push(effect);
+          if (!(effect.update(dt))) {
+            continue;
           }
+          console.log("effect getting pushed");
+          ongoingEffects.push(effect);
         }
         this.queue = ongoingEffects;
         return this.queue.length > 0;
@@ -466,8 +472,8 @@
 
       BlipEvent.prototype.init = function() {
         var d, delay, dot, duration, endColor, endRadius, i, j, nx, ny, startColor, startRadius, x, y, _i, _ref, _ref1, _results;
-        x = longToX(this.longitude);
-        y = latToY(this.latitude);
+        x = this.smallimap.longToX(this.longitude);
+        y = this.smallimap.latToY(this.latitude);
         _results = [];
         for (i = _i = _ref = -this.radius, _ref1 = this.radius; _ref <= _ref1 ? _i <= _ref1 : _i >= _ref1; i = _ref <= _ref1 ? ++_i : --_i) {
           _results.push((function() {
