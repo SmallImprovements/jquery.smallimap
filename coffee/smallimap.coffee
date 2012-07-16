@@ -37,11 +37,16 @@
       @refresh()
 
     refresh: =>
-      now = new Date()
+      now = new Date().getTime()
+      dt = now - @lastRefresh
+      @lastRefresh = now
 
-      for i in [0..@eventQueue.length] when i
-        event = @eventQueue.shift()
-        event now
+     # console.log("eventQueue=" + @eventQueue)
+      ongoingEvents = []
+      for event in @eventQueue when event.refresh dt
+        console.log("info")
+        ongoingEvents.push event
+      @eventQueue = ongoingEvents
 
       unless @dirtyXs
         @dirtyXs = []
@@ -168,7 +173,7 @@
 
     triggerOverlay: =>
         y = 0
-        push = (x, diff) =>
+        push = (x, dt) =>
           dot = @grid[x][0]
           r = dot.initial.radius
 
@@ -177,11 +182,11 @@
               @setRadius x, y, r
 
           @eventQueue.push =>
-            setDots r + diff
+            setDots r + dt
             setTimeout =>
               setDots r
               @eventQueue.push =>
-                push((x + 1) % @width, diff)
+                push((x + 1) % @width, dt)
             , 1000 / @width * 8
 
         push(0, 0.5) for y in [0..@height - 1]
@@ -208,68 +213,126 @@
           lastX = x
           lastY = y
 
-    createChangers: (x, y, startColor, targetColor, colorWeight, startRadius, targetRadius, delay, length) =>
-      setTimeout =>
-        @eventQueue.push(@events.changeColor(@, x, y, startColor, targetColor, colorWeight, Math.min(512, length), =>
-          @eventQueue.push(@events.changeColor(@, x, y, targetColor, startColor, 1, length, -> true))
-        ))
+    enqueueEvent: (event) =>
+      @eventQueue.push(event)
 
-        @eventQueue.push(@events.changeRadius(@, x, y, startRadius, targetRadius, Math.min(512, length), =>
-          @eventQueue.push(@events.changeRadius(@, x, y, targetRadius, startRadius, length, -> true))
-        ))
-      , delay
+  class Effect
 
-    # { longitude: , latitude: , color: String (z.B. "#ff0088"), weight: [0..1], length: [in millis], radius: Int}
-    newEvent: (event) =>
-      x = @longToX event.longitude
-      y = @latToX event.latitude
-      radius = event.radius or 5
+    constructor: (@dot, @duration, options) ->
+      @timeElapsed = 0
+      @easing = options.easing || @linearEasing
+      @callback = options.callback
 
-      for i in [-radius..radius]
-        for j in [-radius..radius]
+    linearEasing: (progress) ->
+      progress
+
+    update: (dt) =>
+      timeElapsed += dt
+      @refresh @easing(timeElapsed/duration)
+      if timeElapsed > duration
+        @callback?()
+        false
+      else
+        true
+
+    withEasing: (easing) =>
+      @easing = easing
+
+    refresh: (progress) =>
+      "unimplemented"
+
+  class RadiusEffect extends Effect
+    constructor: (dot, duration, options) ->
+      super dot, duration, options
+      @startRadius = options.startRadius || 6
+      @endRadius = options.endRadius || 8
+
+    refresh: (progress) =>
+      @dot.setRadius @endRadius * progress + @startRadius * (1 - progress)
+
+  class ColorEffect extends Effect
+    constructor: (dot, duration, options) ->
+      super dot, duration, options
+      @startColor = new Color(options.startColor || "#ff00ff")
+      @endColor = new Color(options.endColor || "#336699")
+
+    refresh: (progress) =>
+      start = new Color(@startColor.rgbString())
+      @dot.setColor = start.mix(@endColor, progress)
+
+  class DelayEffect extends Effect
+    constructor: (dot, duration, options) ->
+      super dot, duration, options
+
+    refresh: (progress) =>
+      "nothing to do"
+
+  class Event
+    constructor: (@smallimap, @callback) ->
+      @queue = []
+
+    enqueue: (effect) ->
+      @queue.push(effect)
+
+    init: () =>
+      "no init, dude"
+
+    refresh: (dt) =>
+      ongoingEffects = []
+      for effect in @queue when effect.refresh dt
+        ongoingEffects.push effect
+      @queue = ongoingEffects
+      @queue.length > 0
+
+  class BlipEvent extends Event
+    constructor: (smallimap, options) ->
+      super smallimap, options.callback
+      @latitude = options.latitude
+      @longitude = options.longitude
+      @color = new Color(options.color || "#336699")
+      @eventRadius = options.eventRadius || 8
+      #@weight = options.weight || 0.5
+      @duration = options.duration || 1024
+
+    init: () =>
+      x = longToX @longitude
+      y = latToY @latitude
+
+      for i in [-@radius..@radius]
+        for j in [-@radius..@radius]
           nx = x + i
           ny = y + j
           d = Math.sqrt(i * i + j * j)
-
-          if nx >= 0 and ny >= 0 and nx < @width and ny < @height and d < radius
+          if @smallimap.grid[nx] and @smallimap.grid[nx][ny]
             dot = @grid[nx][ny]
-            delay = event.length * (d / radius)
-            length = event.length - delay
-            targetColor = new Color(event.color)
-            targetRadius = (@dotRadius - dot.initial.radius) / (d + 1) + dot.initial.radius
-            if length > 0
-              @createChangers(nx, ny, dot.initial.color, targetColor, 1 - d / radius, dot.initial.radius, targetRadius, delay, length)
+            delay = @duration * d/@radius
+            duration = @duration - delay
+            startColor = dot.initial.color
+            startRadius = dot.initial.radius
+            endColor = new Color(@color.rgbString())
+            endRadius = (@dotRadius - startRadius) / (d + 1) + startRadius
+            if duration > 0
+              @enqueue new ColorEffect(dot, duration,
+                  startColor: startColor
+                  endColor: endColor
+                  callback: =>
+                    @enqueue new ColorEffect(dot, duration, { startColor: endColor, endColor: startColor })
+                )
+              @enqueue new RadiusEffect(dot, duration,
+                  startRadius: startRadius
+                  endRadius: endRadius
+                  callback: =>
+                    @enqueue new RadiusEffect(dot, duration, { startRadius: endRadius, endRadius: startRadius })
+                )
 
-    events:
-      changeColor: (smallimap, x, y, start, target, weight, length, onComplete) ->
-        startTime = new Date().getTime()
+  $.si.smallimap.effects =
+    Effect: Effect
+    ColorEffect: ColorEffect
+    RadiusEffect: RadiusEffect
 
-        updater = (now) ->
-          diff = now.getTime() - startTime
-          frameWeight = weight * diff / length
-
-          smallimap.setColor x, y, new Color(start.rgbString()).mix(target, weight)
-
-          if diff < length
-            smallimap.eventQueue.push updater
-          else
-            onComplete()
-
-        return updater
-
-      changeRadius: (smallimap, x, y, start, target, length, onComplete) ->
-        startTime = new Date().getTime()
-
-        updater = (now) ->
-          diff = now.getTime() - startTime
-          if(diff < length)
-            smallimap.setRadius x, y, target * diff / length + start * (1 - diff / length)
-            smallimap.eventQueue.push updater
-          else
-            smallimap.setRadius x, y, target
-            onComplete()
-
-        return updater
+  $.si.smallimap.events =
+    Event: Event
+    BlipEvent: BlipEvent
 
   $.fn.smallimap = (options={}) ->
     options = $.extend {}, $.si.smallimap.defaults, options
