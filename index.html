@@ -61,6 +61,16 @@
         smallimap = $('#smallimap').smallimap().data('api');
         smallimap.run();
 
+	  window.setInterval(function() {
+	    smallimap.newEvent({
+              latitude: 50,
+              longitude: 50,
+              color: '#ff00ff',
+              weight: 1,
+              length: 1000
+            });
+	  }, 180);
+
         window.smallimap = smallimap;
 
         // registerListener: (name, callback, sound='', subject='', category='', action='', label='')

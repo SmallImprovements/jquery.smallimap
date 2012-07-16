@@ -301,19 +301,21 @@
   class RadiusEffect extends Effect
     constructor: (dot, duration, options) ->
       super dot, duration, options
-      @radius = options.radius || 8
+      @startRadius = options.startRadius || 6
+      @endRadius = options.endRadius || 8
 
     refresh: (progress) =>
-      @dot.setRadius @radius * progress + @dot.initial.radius * (1 - progress)
+      @dot.setRadius @endRadius * progress + @startRadius * (1 - progress)
 
   class ColorEffect extends Effect
     constructor: (dot, duration, options) ->
       super dot, duration, options
-      @color = new Color(options.color || "#ff00ff")
+      @startColor = new Color(options.startColor || "#ff00ff")
+      @endColor = new Color(options.endColor || "#336699")
 
     refresh: (progress) =>
-      start = new Color(@dot.initial.color.rgbString())
-      @dot.setColor = start.mix(@color, progress)
+      start = new Color(@startColor.rgbString())
+      @dot.setColor = start.mix(@endColor, progress)
 
   class DelayEffect extends Effect
     constructor: (dot, duration, options) ->
@@ -323,8 +325,63 @@
       "nothing to do"
 
   class Event
-    constructor: () ->
-    effects: () =>
+    constructor: (@smallimap, @callback) ->
+      @queue = []
+
+    enqueue: (effect) ->
+      @queue.push(effect)
+
+    init: () =>
+      "no init, dude"
+
+    refresh: (dt) =>
+      # dequeue logic
+      ongoingEffects = []
+      for event of @queue when event.refresh dt
+        ongoingEffects.push event
+      @queue = ongoingEffects
+      @queue.length > 0
+
+  class BlipEvent
+    constructor: (smallimap, options) ->
+      super smallimap, options.callback
+      @latitude = options.latitude
+      @longitude = options.longitude
+      @color = new Color(options.color || "#336699")
+      @radius = options.radius || 8
+      @weight = options.weight || 0.5
+      @duration = options.duration || 1024
+
+    init: () =>
+      x = longToX @longitude
+      y = latToY @latitude
+
+      for i in [-@radius..@radius]
+        for j in [-@radius..@radius]
+          nx = x + i
+          ny = y + j
+          d = Math.sqrt(i * i + j * j)
+          if @smallimap.grid[nx] and @smallimap.grid[nx][ny]
+            dot = @grid[nx][ny]
+            delay = @duration * d/@radius
+            duration = @duration - delay
+            startColor = dot.initial.color
+            startRadius = dot.initial.radius
+            endColor = new Color(@color.rgbString())
+            endRadius = (@dotRadius - startRadius) / (d + 1) + startRadius
+            if duration > 0
+              @enqueue new ColorEffect(dot, duration,
+                  startColor: startColor
+                  endColor: endColor
+                  callback: =>
+                    @enqueue new ColorEffect(dot, duration, { startColor: endColor, endColor: startColor })
+                )
+              @enqueue new RadiusEffect(dot, duration,
+                  startRadius: startRadius
+                  endRadius: endRadius
+                  callback: =>
+                    @enqueue new RadiusEffect(dot, duration, { startRadius: endRadius, endRadius: startRadius })
+                )
 
   $.fn.smallimap = (options={}) ->
     options = $.extend {}, $.si.smallimap.defaults, options

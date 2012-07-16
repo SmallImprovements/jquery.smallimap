@@ -5,7 +5,7 @@
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   (function($) {
-    var ColorEffect, DelayEffect, Effect, Event, RadiusEffect, Smallimap;
+    var BlipEvent, ColorEffect, DelayEffect, Effect, Event, RadiusEffect, Smallimap;
     $.si || ($.si = {});
     $.si.smallimap = {
       version: '0.1',
@@ -444,11 +444,12 @@
       function RadiusEffect(dot, duration, options) {
         this.refresh = __bind(this.refresh, this);
         RadiusEffect.__super__.constructor.call(this, dot, duration, options);
-        this.radius = options.radius || 8;
+        this.startRadius = options.startRadius || 6;
+        this.endRadius = options.endRadius || 8;
       }
 
       RadiusEffect.prototype.refresh = function(progress) {
-        return this.dot.setRadius(this.radius * progress + this.dot.initial.radius * (1 - progress));
+        return this.dot.setRadius(this.endRadius * progress + this.startRadius * (1 - progress));
       };
 
       return RadiusEffect;
@@ -461,13 +462,14 @@
       function ColorEffect(dot, duration, options) {
         this.refresh = __bind(this.refresh, this);
         ColorEffect.__super__.constructor.call(this, dot, duration, options);
-        this.color = new Color(options.color || "#ff00ff");
+        this.startColor = new Color(options.startColor || "#ff00ff");
+        this.endColor = new Color(options.endColor || "#336699");
       }
 
       ColorEffect.prototype.refresh = function(progress) {
         var start;
-        start = new Color(this.dot.initial.color.rgbString());
-        return this.dot.setColor = start.mix(this.color, progress);
+        start = new Color(this.startColor.rgbString());
+        return this.dot.setColor = start.mix(this.endColor, progress);
       };
 
       return ColorEffect;
@@ -491,14 +493,109 @@
     })(Effect);
     Event = (function() {
 
-      function Event() {
-        this.effects = __bind(this.effects, this);
+      function Event(smallimap, callback) {
+        this.smallimap = smallimap;
+        this.callback = callback;
+        this.refresh = __bind(this.refresh, this);
 
+        this.init = __bind(this.init, this);
+
+        this.queue = [];
       }
 
-      Event.prototype.effects = function() {};
+      Event.prototype.enqueue = function(effect) {
+        return this.queue.push(effect);
+      };
+
+      Event.prototype.init = function() {
+        return "no init, dude";
+      };
+
+      Event.prototype.refresh = function(dt) {
+        var event, ongoingEffects;
+        ongoingEffects = [];
+        for (event in this.queue) {
+          if (event.refresh(dt)) {
+            ongoingEffects.push(event);
+          }
+        }
+        this.queue = ongoingEffects;
+        return this.queue.length > 0;
+      };
 
       return Event;
+
+    })();
+    BlipEvent = (function() {
+
+      function BlipEvent(smallimap, options) {
+        this.init = __bind(this.init, this);
+        BlipEvent.__super__.constructor.call(this, smallimap, options.callback);
+        this.latitude = options.latitude;
+        this.longitude = options.longitude;
+        this.color = new Color(options.color || "#336699");
+        this.radius = options.radius || 8;
+        this.weight = options.weight || 0.5;
+        this.duration = options.duration || 1024;
+      }
+
+      BlipEvent.prototype.init = function() {
+        var d, delay, dot, duration, endColor, endRadius, i, j, nx, ny, startColor, startRadius, x, y, _i, _ref, _ref1, _results;
+        x = longToX(this.longitude);
+        y = latToY(this.latitude);
+        _results = [];
+        for (i = _i = _ref = -this.radius, _ref1 = this.radius; _ref <= _ref1 ? _i <= _ref1 : _i >= _ref1; i = _ref <= _ref1 ? ++_i : --_i) {
+          _results.push((function() {
+            var _j, _ref2, _ref3, _results1,
+              _this = this;
+            _results1 = [];
+            for (j = _j = _ref2 = -this.radius, _ref3 = this.radius; _ref2 <= _ref3 ? _j <= _ref3 : _j >= _ref3; j = _ref2 <= _ref3 ? ++_j : --_j) {
+              nx = x + i;
+              ny = y + j;
+              d = Math.sqrt(i * i + j * j);
+              if (this.smallimap.grid[nx] && this.smallimap.grid[nx][ny]) {
+                dot = this.grid[nx][ny];
+                delay = this.duration * d / this.radius;
+                duration = this.duration - delay;
+                startColor = dot.initial.color;
+                startRadius = dot.initial.radius;
+                endColor = new Color(this.color.rgbString());
+                endRadius = (this.dotRadius - startRadius) / (d + 1) + startRadius;
+                if (duration > 0) {
+                  this.enqueue(new ColorEffect(dot, duration, {
+                    startColor: startColor,
+                    endColor: endColor,
+                    callback: function() {
+                      return _this.enqueue(new ColorEffect(dot, duration, {
+                        startColor: endColor,
+                        endColor: startColor
+                      }));
+                    }
+                  }));
+                  _results1.push(this.enqueue(new RadiusEffect(dot, duration, {
+                    startRadius: startRadius,
+                    endRadius: endRadius,
+                    callback: function() {
+                      return _this.enqueue(new RadiusEffect(dot, duration, {
+                        startRadius: endRadius,
+                        endRadius: startRadius
+                      }));
+                    }
+                  })));
+                } else {
+                  _results1.push(void 0);
+                }
+              } else {
+                _results1.push(void 0);
+              }
+            }
+            return _results1;
+          }).call(this));
+        }
+        return _results;
+      };
+
+      return BlipEvent;
 
     })();
     return $.fn.smallimap = function(options) {
