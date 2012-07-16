@@ -271,6 +271,61 @@
 
         return updater
 
+  # new ColorEffect(dot, duration, "#ff0088").withEasing(cubicEasing).onComplete(callback);
+
+  class Effect
+
+    constructor: (@dot, @duration, options) ->
+      @timeElapsed = 0
+      @easing = options.easing || @linearEasing
+      @callback = options.callback
+
+    linearEasing: (progress) ->
+      progress
+
+    update: (diff) =>
+      timeElapsed += diff
+      @refresh @easing(timeElapsed/duration)
+      if timeElapsed > duration
+        @callback?()
+        false
+      else
+        true
+
+    withEasing: (easing) =>
+      @easing = easing
+
+    refresh: (progress) =>
+      "unimplemented"
+
+  class RadiusEffect extends Effect
+    constructor: (dot, duration, options) ->
+      super dot, duration, options
+      @radius = options.radius || 8
+
+    refresh: (progress) =>
+      @dot.setRadius @radius * progress + @dot.initial.radius * (1 - progress)
+
+  class ColorEffect extends Effect
+    constructor: (dot, duration, options) ->
+      super dot, duration, options
+      @color = new Color(options.color || "#ff00ff")
+
+    refresh: (progress) =>
+      start = new Color(@dot.initial.color.rgbString())
+      @dot.setColor = start.mix(@color, progress)
+
+  class DelayEffect extends Effect
+    constructor: (dot, duration, options) ->
+      super dot, duration, options
+
+    refresh: (progress) =>
+      "nothing to do"
+
+  class Event
+    constructor: () ->
+    effects: () =>
+
   $.fn.smallimap = (options={}) ->
     options = $.extend {}, $.si.smallimap.defaults, options
 
