@@ -10,6 +10,7 @@
       sourceId: 'SonicMetricClient'
       soundEnabled: true
       useLocalStorage: true
+      useLastKeyOnRequests: true
       animationSpeed: 150
       alertTimeout: 3000
       pollingInterval: 15000
@@ -35,7 +36,7 @@
     caller = 'DOM'
     if arguments.callee.caller.toString().match(/function ([^\(]+)/)
       caller = arguments.callee.caller.toString().match(/function ([^\(]+)/)[1]
-    window.console?.log("SOME [#{caller}]: #{message}") if $.some.debug? 
+    window.console?.log("SOME [#{caller}]: #{message}") if $.some.debug?
 
   # Sonic Metrics client class
   class $.some.SonicMetricsClient
@@ -112,7 +113,7 @@
           log sounds
         else if Modernizr?.audio?.mp3?
           log 'Mp3 support for this browser is enabled'
-        else 
+        else
           @soundEnabled = false
           @feedback 'Your browser does not support our audio player at this time :-('
 
@@ -126,7 +127,7 @@
 
     storeData: =>
       log 'Storing data in local storage'
-      storageData = 
+      storageData =
         listeners: @listeners
         username: @username
         password: @password
@@ -190,7 +191,7 @@
 
       if username and password
         # TODO: Try to authenticate with server
-        # $.getJSON $.some.loginPath, 
+        # $.getJSON $.some.loginPath,
         #     username: username
         #     password: password
         #   (data) =>
@@ -224,7 +225,7 @@
 
     register: (username, password) =>
       # TODO: Try to authenticate with server
-      # $.getJSON $.some.registerPath, 
+      # $.getJSON $.some.registerPath,
       #     username: username
       #     password: password
       #   (data) =>
@@ -258,7 +259,7 @@
           category: listener.category
           action: listener.action
           label: listener.label
-          lastkey: listener.lastkey
+          lastkey: if @useLastKeyOnRequests then listener.lastkey else ''
           start: @getCurrentTime() - @pollingInterval - @serverTimedelta
         , (data) =>
           return unless data
@@ -282,7 +283,7 @@
               # Drop events in the past
               if scheduledTimeout > 0
                 log "Scheduling event #{event.key} for listener #{listener.name}"
-                listener.callback listener, scheduledTimeout, event 
+                listener.callback listener, scheduledTimeout, event
               else
                 log "Dropped event #{event.key} from the past at delta #{scheduledTimeout}"
             else

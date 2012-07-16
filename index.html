@@ -26,12 +26,13 @@
 
         // Configure metrics client
         var metricsClient = new $.some.SonicMetricsClient('SIMetricsClient', {
-          serverUrl: 'http://localhost:8080',//'http://www.small-improvements.com',
+          serverUrl: 'http://www.small-improvements.com',//'http://localhost:8080',
           sourceId: 'SIMetricsClient',
           getEventsPath: 'queryActivitiesJSON',
           getServerTime: 'queryServertimeJSON',
           soundEnabled: false,
-          useLocalStorage: false
+          useLocalStorage: false,
+          useLastKeyOnRequests: false
         });
 
         // Callback for activity listeners

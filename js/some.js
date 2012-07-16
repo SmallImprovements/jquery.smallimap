@@ -17,6 +17,7 @@
         sourceId: 'SonicMetricClient',
         soundEnabled: true,
         useLocalStorage: true,
+        useLastKeyOnRequests: true,
         animationSpeed: 150,
         alertTimeout: 3000,
         pollingInterval: 15000,
@@ -342,7 +343,7 @@
           category: listener.category,
           action: listener.action,
           label: listener.label,
-          lastkey: listener.lastkey,
+          lastkey: this.useLastKeyOnRequests ? listener.lastkey : '',
           start: this.getCurrentTime() - this.pollingInterval - this.serverTimedelta
         }, function(data) {
           var event, lastEventTimestamp, scheduledTimeout, timeoutOffset, _i, _len, _results;
