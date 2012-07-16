@@ -30,9 +30,7 @@
         if (options == null) {
           options = {};
         }
-        this.newEvent = __bind(this.newEvent, this);
-
-        this.createChangers = __bind(this.createChangers, this);
+        this.enqueueEvent = __bind(this.enqueueEvent, this);
 
         this.newMouseHover = __bind(this.newMouseHover, this);
 
@@ -85,15 +83,21 @@
       };
 
       Smallimap.prototype.refresh = function() {
-        var event, i, now, x, y, _i, _j, _k, _l, _ref, _ref1, _ref2, _ref3;
-        now = new Date();
-        for (i = _i = 0, _ref = this.eventQueue.length; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
-          if (!(i)) {
+        var dt, event, now, ongoingEvents, x, y, _i, _j, _k, _l, _len, _ref, _ref1, _ref2, _ref3;
+        now = new Date().getTime();
+        dt = now - this.lastRefresh;
+        this.lastRefresh = now;
+        ongoingEvents = [];
+        _ref = this.eventQueue;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          event = _ref[_i];
+          if (!(event.refresh(dt))) {
             continue;
           }
-          event = this.eventQueue.shift();
-          event(now);
+          console.log("info");
+          ongoingEvents.push(event);
         }
+        this.eventQueue = ongoingEvents;
         if (!this.dirtyXs) {
           this.dirtyXs = [];
           for (x = _j = 0, _ref1 = this.width - 1; 0 <= _ref1 ? _j <= _ref1 : _j >= _ref1; x = 0 <= _ref1 ? ++_j : --_j) {
@@ -250,7 +254,7 @@
         var push, y, _i, _ref, _results,
           _this = this;
         y = 0;
-        push = function(x, diff) {
+        push = function(x, dt) {
           var dot, r, setDots;
           dot = _this.grid[x][0];
           r = dot.initial.radius;
@@ -263,11 +267,11 @@
             return _results;
           };
           return _this.eventQueue.push(function() {
-            setDots(r + diff);
+            setDots(r + dt);
             return setTimeout(function() {
               setDots(r);
               return _this.eventQueue.push(function() {
-                return push((x + 1) % _this.width, diff);
+                return push((x + 1) % _this.width, dt);
               });
             }, 1000 / _this.width * 8);
           });
@@ -304,90 +308,8 @@
         }
       };
 
-      Smallimap.prototype.createChangers = function(x, y, startColor, targetColor, colorWeight, startRadius, targetRadius, delay, length) {
-        var _this = this;
-        return setTimeout(function() {
-          _this.eventQueue.push(_this.events.changeColor(_this, x, y, startColor, targetColor, colorWeight, Math.min(512, length), function() {
-            return _this.eventQueue.push(_this.events.changeColor(_this, x, y, targetColor, startColor, 1, length, function() {
-              return true;
-            }));
-          }));
-          return _this.eventQueue.push(_this.events.changeRadius(_this, x, y, startRadius, targetRadius, Math.min(512, length), function() {
-            return _this.eventQueue.push(_this.events.changeRadius(_this, x, y, targetRadius, startRadius, length, function() {
-              return true;
-            }));
-          }));
-        }, delay);
-      };
-
-      Smallimap.prototype.newEvent = function(event) {
-        var d, delay, dot, i, j, length, nx, ny, radius, targetColor, targetRadius, x, y, _i, _results;
-        x = this.longToX(event.longitude);
-        y = this.latToX(event.latitude);
-        radius = event.radius || 5;
-        _results = [];
-        for (i = _i = -radius; -radius <= radius ? _i <= radius : _i >= radius; i = -radius <= radius ? ++_i : --_i) {
-          _results.push((function() {
-            var _j, _results1;
-            _results1 = [];
-            for (j = _j = -radius; -radius <= radius ? _j <= radius : _j >= radius; j = -radius <= radius ? ++_j : --_j) {
-              nx = x + i;
-              ny = y + j;
-              d = Math.sqrt(i * i + j * j);
-              if (nx >= 0 && ny >= 0 && nx < this.width && ny < this.height && d < radius) {
-                dot = this.grid[nx][ny];
-                delay = event.length * (d / radius);
-                length = event.length - delay;
-                targetColor = new Color(event.color);
-                targetRadius = (this.dotRadius - dot.initial.radius) / (d + 1) + dot.initial.radius;
-                if (length > 0) {
-                  _results1.push(this.createChangers(nx, ny, dot.initial.color, targetColor, 1 - d / radius, dot.initial.radius, targetRadius, delay, length));
-                } else {
-                  _results1.push(void 0);
-                }
-              } else {
-                _results1.push(void 0);
-              }
-            }
-            return _results1;
-          }).call(this));
-        }
-        return _results;
-      };
-
-      Smallimap.prototype.events = {
-        changeColor: function(smallimap, x, y, start, target, weight, length, onComplete) {
-          var startTime, updater;
-          startTime = new Date().getTime();
-          updater = function(now) {
-            var diff, frameWeight;
-            diff = now.getTime() - startTime;
-            frameWeight = weight * diff / length;
-            smallimap.setColor(x, y, new Color(start.rgbString()).mix(target, weight));
-            if (diff < length) {
-              return smallimap.eventQueue.push(updater);
-            } else {
-              return onComplete();
-            }
-          };
-          return updater;
-        },
-        changeRadius: function(smallimap, x, y, start, target, length, onComplete) {
-          var startTime, updater;
-          startTime = new Date().getTime();
-          updater = function(now) {
-            var diff;
-            diff = now.getTime() - startTime;
-            if (diff < length) {
-              smallimap.setRadius(x, y, target * diff / length + start * (1 - diff / length));
-              return smallimap.eventQueue.push(updater);
-            } else {
-              smallimap.setRadius(x, y, target);
-              return onComplete();
-            }
-          };
-          return updater;
-        }
+      Smallimap.prototype.enqueueEvent = function(event) {
+        return this.eventQueue.push(event);
       };
 
       return Smallimap;
@@ -413,8 +335,8 @@
         return progress;
       };
 
-      Effect.prototype.update = function(diff) {
-        timeElapsed += diff;
+      Effect.prototype.update = function(dt) {
+        timeElapsed += dt;
         this.refresh(this.easing(timeElapsed / duration));
         if (timeElapsed > duration) {
           if (typeof this.callback === "function") {
@@ -512,11 +434,13 @@
       };
 
       Event.prototype.refresh = function(dt) {
-        var event, ongoingEffects;
+        var effect, ongoingEffects, _i, _len, _ref;
         ongoingEffects = [];
-        for (event in this.queue) {
-          if (event.refresh(dt)) {
-            ongoingEffects.push(event);
+        _ref = this.queue;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          effect = _ref[_i];
+          if (effect.refresh(dt)) {
+            ongoingEffects.push(effect);
           }
         }
         this.queue = ongoingEffects;
@@ -526,7 +450,9 @@
       return Event;
 
     })();
-    BlipEvent = (function() {
+    BlipEvent = (function(_super) {
+
+      __extends(BlipEvent, _super);
 
       function BlipEvent(smallimap, options) {
         this.init = __bind(this.init, this);
@@ -534,8 +460,7 @@
         this.latitude = options.latitude;
         this.longitude = options.longitude;
         this.color = new Color(options.color || "#336699");
-        this.radius = options.radius || 8;
-        this.weight = options.weight || 0.5;
+        this.eventRadius = options.eventRadius || 8;
         this.duration = options.duration || 1024;
       }
 
@@ -597,7 +522,16 @@
 
       return BlipEvent;
 
-    })();
+    })(Event);
+    $.si.smallimap.effects = {
+      Effect: Effect,
+      ColorEffect: ColorEffect,
+      RadiusEffect: RadiusEffect
+    };
+    $.si.smallimap.events = {
+      Event: Event,
+      BlipEvent: BlipEvent
+    };
     return $.fn.smallimap = function(options) {
       if (options == null) {
         options = {};

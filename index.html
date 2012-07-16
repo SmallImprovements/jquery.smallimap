@@ -62,13 +62,13 @@
         smallimap.run();
 
 	  window.setInterval(function() {
-	    smallimap.newEvent({
+	    var event = new $.si.smallimap.events.BlipEvent(smallimap, {
               latitude: 50,
               longitude: 50,
               color: '#ff00ff',
-              weight: 1,
-              length: 1000
+              duration: 1000
             });
+	    smallimap.enqueueEvent(event);
 	  }, 180);
 
         window.smallimap = smallimap;
