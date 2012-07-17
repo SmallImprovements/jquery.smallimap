@@ -61,15 +61,15 @@
         smallimap = $('#smallimap').smallimap().data('api');
         smallimap.run();
 
-	  window.setTimeout(function() {
+	  window.setInterval(function() {
 	    var event = new $.si.smallimap.events.BlipEvent(smallimap, {
-              latitude: 50,
-              longitude: 50,
+	      latitude: Math.random() * 90,
+	      longitude: Math.random() * 180,
               color: '#ff00ff',
               duration: 1024
             });
 	    smallimap.enqueueEvent(event);
-	  }, 10);
+	  }, 500);
 
         window.smallimap = smallimap;
 

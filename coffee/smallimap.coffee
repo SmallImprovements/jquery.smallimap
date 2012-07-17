@@ -104,7 +104,7 @@
       landColors = @colors.land.day(@)
       idx = Math.floor(darkness * (landColors.length - 2))
 
-      if sunSet.isDaylight now.getHours()
+      if sunSet.isDaylight(now.getHours()) or latitude >= 69
         new Color(landColors[idx])
       else
         new Color(landColors[idx + 1])
@@ -272,17 +272,14 @@
       @queue = []
 
     enqueue: (effect) =>
-      console.log("enqueued: " + effect)
       @queue.push effect
 
     init: () =>
       "no init, dude"
 
     refresh: (dt) =>
-      #ongoingEffects = []
       currentEffects = @queue.splice(0)
       @queue = []
-      # console.log("effects=" + @queue)
       for effect in currentEffects
         if effect.update dt
           @queue.push effect
