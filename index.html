@@ -42,7 +42,7 @@
           log("Scheduling activity on the map for listener " + listener.name + " in " + scheduledTimeout + " ms");
 
           var eventColor,
-              eventDuration = 500,
+              eventDuration = 2048,
               eventWeight = 0.5;
 
           switch (event.category) {
@@ -133,7 +133,7 @@
               longitude: Math.random() * 360 - 180,
               color: '#ff00ff',
                 eventRadius: 4,
-                duration: 1024,
+                duration: 10000,
                 weight: 0.5
             });
             smallimap.enqueueEvent(event);
