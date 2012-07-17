@@ -91,11 +91,9 @@
         _ref = this.eventQueue;
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           event = _ref[_i];
-          if (!(event.refresh(dt))) {
-            continue;
+          if (event.refresh(dt)) {
+            ongoingEvents.push(event);
           }
-          console.log("info");
-          ongoingEvents.push(event);
         }
         this.eventQueue = ongoingEvents;
         if (!this.dirtyXs) {
@@ -130,7 +128,8 @@
       };
 
       Smallimap.prototype.dot = function(x, y, landiness) {
-        var newDot;
+        var newDot,
+          _this = this;
         newDot = {
           x: x,
           y: y,
@@ -140,7 +139,13 @@
             radius: this.dotRadius * 0.64
           },
           target: {},
-          dirty: true
+          dirty: true,
+          setRadius: function(radius) {
+            return _this.setRadius(x, y, radius);
+          },
+          setColor: function(color) {
+            return _this.setColor(x, y, color);
+          }
         };
         return newDot;
       };
@@ -309,6 +314,7 @@
       };
 
       Smallimap.prototype.enqueueEvent = function(event) {
+        event.init();
         return this.eventQueue.push(event);
       };
 
@@ -322,8 +328,6 @@
         this.duration = duration;
         this.refresh = __bind(this.refresh, this);
 
-        this.withEasing = __bind(this.withEasing, this);
-
         this.update = __bind(this.update, this);
 
         this.timeElapsed = 0;
@@ -336,21 +340,16 @@
       };
 
       Effect.prototype.update = function(dt) {
-        timeElapsed += dt;
-        this.refresh(this.easing(timeElapsed / duration));
-        if (timeElapsed > duration) {
-          console.log("timeElapsed > duration");
+        this.timeElapsed += dt;
+        if (this.timeElapsed > this.duration) {
           if (typeof this.callback === "function") {
             this.callback();
           }
           return false;
         } else {
+          this.refresh(this.easing(this.timeElapsed / this.duration));
           return true;
         }
-      };
-
-      Effect.prototype.withEasing = function(easing) {
-        return this.easing = easing;
       };
 
       Effect.prototype.refresh = function(progress) {
@@ -367,8 +366,8 @@
       function RadiusEffect(dot, duration, options) {
         this.refresh = __bind(this.refresh, this);
         RadiusEffect.__super__.constructor.call(this, dot, duration, options);
-        this.startRadius = options.startRadius || 6;
-        this.endRadius = options.endRadius || 8;
+        this.startRadius = options.startRadius;
+        this.endRadius = options.endRadius;
       }
 
       RadiusEffect.prototype.refresh = function(progress) {
@@ -443,11 +442,9 @@
         _ref = this.queue;
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           effect = _ref[_i];
-          if (!(effect.update(dt))) {
-            continue;
+          if (effect.update(dt)) {
+            ongoingEffects.push(effect);
           }
-          console.log("effect getting pushed");
-          ongoingEffects.push(effect);
         }
         this.queue = ongoingEffects;
         return this.queue.length > 0;
@@ -472,47 +469,28 @@
 
       BlipEvent.prototype.init = function() {
         var d, delay, dot, duration, endColor, endRadius, i, j, nx, ny, startColor, startRadius, x, y, _i, _ref, _ref1, _results;
+        console.log("wtf");
         x = this.smallimap.longToX(this.longitude);
         y = this.smallimap.latToY(this.latitude);
         _results = [];
-        for (i = _i = _ref = -this.radius, _ref1 = this.radius; _ref <= _ref1 ? _i <= _ref1 : _i >= _ref1; i = _ref <= _ref1 ? ++_i : --_i) {
+        for (i = _i = _ref = -this.eventRadius, _ref1 = this.eventRadius; _ref <= _ref1 ? _i <= _ref1 : _i >= _ref1; i = _ref <= _ref1 ? ++_i : --_i) {
           _results.push((function() {
-            var _j, _ref2, _ref3, _results1,
-              _this = this;
+            var _j, _ref2, _ref3, _results1;
             _results1 = [];
-            for (j = _j = _ref2 = -this.radius, _ref3 = this.radius; _ref2 <= _ref3 ? _j <= _ref3 : _j >= _ref3; j = _ref2 <= _ref3 ? ++_j : --_j) {
+            for (j = _j = _ref2 = -this.eventRadius, _ref3 = this.eventRadius; _ref2 <= _ref3 ? _j <= _ref3 : _j >= _ref3; j = _ref2 <= _ref3 ? ++_j : --_j) {
               nx = x + i;
               ny = y + j;
               d = Math.sqrt(i * i + j * j);
               if (this.smallimap.grid[nx] && this.smallimap.grid[nx][ny]) {
-                dot = this.grid[nx][ny];
-                delay = this.duration * d / this.radius;
+                dot = this.smallimap.grid[nx][ny];
+                delay = this.duration * d / this.eventRadius;
                 duration = this.duration - delay;
                 startColor = dot.initial.color;
                 startRadius = dot.initial.radius;
                 endColor = new Color(this.color.rgbString());
-                endRadius = (this.dotRadius - startRadius) / (d + 1) + startRadius;
+                endRadius = this.smallimap.dotRadius;
                 if (duration > 0) {
-                  this.enqueue(new ColorEffect(dot, duration, {
-                    startColor: startColor,
-                    endColor: endColor,
-                    callback: function() {
-                      return _this.enqueue(new ColorEffect(dot, duration, {
-                        startColor: endColor,
-                        endColor: startColor
-                      }));
-                    }
-                  }));
-                  _results1.push(this.enqueue(new RadiusEffect(dot, duration, {
-                    startRadius: startRadius,
-                    endRadius: endRadius,
-                    callback: function() {
-                      return _this.enqueue(new RadiusEffect(dot, duration, {
-                        startRadius: endRadius,
-                        endRadius: startRadius
-                      }));
-                    }
-                  })));
+                  _results1.push("wtf");
                 } else {
                   _results1.push(void 0);
                 }

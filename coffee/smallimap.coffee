@@ -41,10 +41,8 @@
       dt = now - @lastRefresh
       @lastRefresh = now
 
-      #console.log("eventQueue=" + @eventQueue)
       ongoingEvents = []
       for event in @eventQueue when event.refresh dt
-        console.log("info")
         ongoingEvents.push event
       @eventQueue = ongoingEvents
 
@@ -80,6 +78,10 @@
           radius: @dotRadius * 0.64
         target : {}
         dirty: true
+        setRadius: (radius) =>
+          @setRadius x, y, radius
+        setColor: (color) =>
+          @setColor x, y, color
 
       return newDot
 
@@ -214,6 +216,7 @@
           lastY = y
 
     enqueueEvent: (event) =>
+      event.init()
       @eventQueue.push(event)
 
   class Effect
@@ -227,17 +230,13 @@
       progress
 
     update: (dt) =>
-      timeElapsed += dt
-      @refresh @easing(timeElapsed/duration)
-      if timeElapsed > duration
-        console.log("timeElapsed > duration")
+      @timeElapsed += dt
+      if @timeElapsed > @duration
         @callback?()
         false
       else
+        @refresh @easing(@timeElapsed/@duration)
         true
-
-    withEasing: (easing) =>
-      @easing = easing
 
     refresh: (progress) =>
       "unimplemented"
@@ -245,8 +244,8 @@
   class RadiusEffect extends Effect
     constructor: (dot, duration, options) ->
       super dot, duration, options
-      @startRadius = options.startRadius || 6
-      @endRadius = options.endRadius || 8
+      @startRadius = options.startRadius
+      @endRadius = options.endRadius
 
     refresh: (progress) =>
       @dot.setRadius @endRadius * progress + @startRadius * (1 - progress)
@@ -283,7 +282,6 @@
       ongoingEffects = []
       # console.log("effects=" + @queue)
       for effect in @queue when effect.update dt
-        console.log("effect getting pushed")
         ongoingEffects.push effect
       @queue = ongoingEffects
       @queue.length > 0
@@ -295,39 +293,41 @@
       @longitude = options.longitude
       @color = new Color(options.color || "#336699")
       @eventRadius = options.eventRadius || 8
-      #@weight = options.weight || 0.5
       @duration = options.duration || 1024
+      #@weight = options.weight || 0.5
 
     init: () =>
+      console.log("wtf")
       x = @smallimap.longToX @longitude
       y = @smallimap.latToY @latitude
 
-      for i in [-@radius..@radius]
-        for j in [-@radius..@radius]
+      for i in [-@eventRadius..@eventRadius]
+        for j in [-@eventRadius..@eventRadius]
           nx = x + i
           ny = y + j
           d = Math.sqrt(i * i + j * j)
           if @smallimap.grid[nx] and @smallimap.grid[nx][ny]
-            dot = @grid[nx][ny]
-            delay = @duration * d/@radius
+            dot = @smallimap.grid[nx][ny]
+            delay = @duration * d/@eventRadius
             duration = @duration - delay
             startColor = dot.initial.color
             startRadius = dot.initial.radius
             endColor = new Color(@color.rgbString())
-            endRadius = (@dotRadius - startRadius) / (d + 1) + startRadius
+            endRadius = @smallimap.dotRadius
             if duration > 0
-              @enqueue new ColorEffect(dot, duration,
-                  startColor: startColor
-                  endColor: endColor
-                  callback: =>
-                    @enqueue new ColorEffect(dot, duration, { startColor: endColor, endColor: startColor })
-                )
-              @enqueue new RadiusEffect(dot, duration,
-                  startRadius: startRadius
-                  endRadius: endRadius
-                  callback: =>
-                    @enqueue new RadiusEffect(dot, duration, { startRadius: endRadius, endRadius: startRadius })
-                )
+              "wtf"
+              #@enqueue new ColorEffect(dot, duration,
+              #   startColor: startColor
+              #   endColor: endColor
+              #   callback: =>
+                    #@enqueue new ColorEffect(dot, duration, { startColor: endColor, endColor: startColor })
+              # )
+              #@enqueue new RadiusEffect(dot, duration,
+              #   startRadius: startRadius
+              #   endRadius: endRadius
+              #   callback: =>
+              #     #@enqueue new RadiusEffect(dot, duration, { startRadius: endRadius, endRadius: startRadius })
+              # )
 
   $.si.smallimap.effects =
     Effect: Effect
