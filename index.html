@@ -133,7 +133,7 @@
               longitude: Math.random() * 360 - 180,
               color: '#ff00ff',
                 eventRadius: 4,
-                duration: 10000,
+                duration: 2048,
                 weight: 0.5
             });
             smallimap.enqueueEvent(event);
@@ -157,7 +157,7 @@
 
         // Init map
         smallimap = $('#smallimap').smallimap({
-          dotRadius: 3,
+          dotRadius: 4,
           width: 990,
           height: 495
         }).data('api');
