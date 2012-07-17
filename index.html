@@ -132,11 +132,12 @@
               latitude: Math.random() * 180 - 90,
               longitude: Math.random() * 360 - 180,
               color: '#ff00ff',
+                eventRadius: 3,
                 duration: 1024,
                 weight: 0.8
             });
             smallimap.enqueueEvent(event);
-          }, 800);
+          }, 8);
         };
         window.stopSmallimapTest = function() {
           clearInterval(testIntervalId);

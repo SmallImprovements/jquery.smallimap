@@ -274,7 +274,7 @@
 
       Effect.prototype.update = function(dt) {
         this.timeElapsed += dt;
-        this.refresh(Math.min(1, this.easing(this.timeElapsed / this.duration)));
+        this.refresh(this.easing(Math.min(1, this.timeElapsed / this.duration)));
         if (this.timeElapsed > this.duration) {
           if (typeof this.callback === "function") {
             this.callback();
@@ -458,7 +458,7 @@
         endColor = new Color(this.color.rgbString()).mix(startColor, d / this.eventRadius * (1 - this.weight));
         endRadius = (this.smallimap.dotRadius - startRadius) * this.weight / (d + 1) + startRadius;
         if (duration > 0) {
-          this.enqueue(new DelayEffect(dot, delay, {
+          return this.enqueue(new DelayEffect(dot, delay, {
             callback: function() {
               return _this.enqueue(new ColorEffect(dot, duration / 9, {
                 startColor: startColor,
@@ -469,21 +469,6 @@
                     startColor: endColor,
                     endColor: startColor,
                     easing: easing.inverse(easing.quadratic)
-                  }));
-                }
-              }));
-            }
-          }));
-          return this.enqueue(new DelayEffect(dot, delay, {
-            callback: function() {
-              return _this.enqueue(new RadiusEffect(dot, duration / 9, {
-                startRadius: startRadius,
-                endRadius: endRadius,
-                easing: easing.cubic,
-                callback: function() {
-                  return _this.enqueue(new RadiusEffect(dot, duration * 8 / 9, {
-                    startRadius: endRadius,
-                    endRadius: startRadius
                   }));
                 }
               }));
@@ -648,9 +633,9 @@
       cubic: function(progress) {
         return progress * progress * progress;
       },
-      inverse: function(easing) {
+      inverse: function(easingFunction) {
         return function(progress) {
-          return 1 - easing(1 - progress);
+          return 1 - easingFunction(1 - progress);
         };
       }
     };

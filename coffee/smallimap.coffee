@@ -181,7 +181,7 @@
 
     update: (dt) =>
       @timeElapsed += dt
-      @refresh Math.min(1, @easing(@timeElapsed/@duration))
+      @refresh(@easing Math.min(1, @timeElapsed/@duration))
       if @timeElapsed > @duration
         @callback?()
         false
@@ -284,20 +284,20 @@
                 @enqueue new ColorEffect(dot, duration*8/9,
                   startColor: endColor
                   endColor: startColor
-                  easing: easing.inverse easing.quadratic
+                  easing: easing.inverse(easing.quadratic)
                 )
             )
         )
-        @enqueue new DelayEffect(dot, delay,
-          callback: =>
-            @enqueue new RadiusEffect(dot, duration/9,
-              startRadius: startRadius
-              endRadius: endRadius
-              easing: easing.cubic
-              callback: =>
-                @enqueue new RadiusEffect(dot, duration*8/9, { startRadius: endRadius, endRadius: startRadius })
-            )
-        )
+        #@enqueue new DelayEffect(dot, delay,
+        # callback: =>
+        #   @enqueue new RadiusEffect(dot, duration/9,
+        #     startRadius: startRadius
+        #     endRadius: endRadius
+        #     easing: easing.cubic
+        #     callback: =>
+        #       @enqueue new RadiusEffect(dot, duration*8/9, { startRadius: endRadius, endRadius: startRadius })
+        #   )
+        #)
 
   class LensEvent extends GeoEvent
     constructor: (smallimap, options) ->
@@ -403,9 +403,9 @@
       progress*progress
     cubic: (progress) ->
       progress*progress*progress
-    inverse: (easing) ->
+    inverse: (easingFunction) ->
       (progress) ->
-        1 - easing(1 - progress)
+        1 - easingFunction(1 - progress)
 
   $.si.smallimap.effects =
     Effect: Effect
