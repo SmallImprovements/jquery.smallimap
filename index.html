@@ -2,13 +2,14 @@
 <html>
   <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>SI Metricstest</title>
     <link rel="stylesheet" href="css/jquery.smallipop-0.1.6.min.css" type="text/css" media="all" />
   </head>
   <body>
     <h1>Smallimap Demo</h1>
     <div>
-      <canvas id="smallimap" width="1200" height="600"></canvas>
+      <canvas id="smallimap" width="1000" height="500"></canvas>
     </div>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
@@ -34,24 +35,24 @@
 
         // Callback for activity listeners
         function drawEventOnMap(listener, scheduledTimeout, event) {
-          log("Scheduling activity on the map for listener" + listener.name + " in " + scheduledTimeout + " ms");
+          log("Scheduling activity on the map for listener " + listener.name + " in " + scheduledTimeout + " ms");
 
           var eventColor,
-              eventDuration = 1000,
+              eventDuration = 500,
               eventWeight = 1;
 
           switch (event.category) {
             case 'appraisal':
-              eventColor = '#ff0000'; // Red
+              eventColor = '#b4da4d'; // Yellow/Green
               break;
             case 'feedback':
-              eventColor = '#00ff00'; // Green
+              eventColor = '#35ac46'; // Light green
               break;
             case 'objective':
-              eventColor = '#0000ff'; // Blue
+              eventColor = '#64a3e3'; // Blue
               break;
             case 'admin':
-              eventColor = '#ffff00'; // Brown
+              eventColor = '#eaab48'; // Orange
               break;
             default:
               eventColor = '#ff00ff'; // Pink
@@ -60,14 +61,14 @@
           window.setTimeout(function() {
             log("Enqueing event on the map: " + event.label);
 
-            var newEvent = $.si.smallimap.events.BlipEvent(smallimap, {
+            var newEvent = new $.si.smallimap.events.BlipEvent(smallimap, {
               latitude: event.latitude,
               longitude: event.longitude,
               color: eventColor,
               weight: eventWeight,
               length: eventDuration
             });
-            smallimap.enqueEvent(newEvent);
+            smallimap.enqueueEvent(newEvent);
           }, scheduledTimeout);
         }
 

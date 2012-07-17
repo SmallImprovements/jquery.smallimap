@@ -4,8 +4,10 @@
   $.si.smallimap =
     version: '0.1'
     defaults:
+      dotRadius: 4
+      fps: 20
       colors:
-        lights: ["#fdf6e3", "#eee8d5", "#b8b0aa", "#93a1a1", "#839496"]
+        lights: ["#fdf6e3", "#fafafa", "#dddddd", "#93a1a1", "#839496"]
         darks: ["#002b36", "#073642", "#586e75", "#657b83"]
         land:
           day: (smallimap) ->
@@ -16,7 +18,6 @@
   class Smallimap
 
     constructor: (@obj, cwidth, cheight, @renderContext, @world, options={}) ->
-      @dotRadius = 3.2
       @dotDiameter = @dotRadius * 2
       @width = cwidth / @dotDiameter
       @height = cheight / @dotDiameter
@@ -25,7 +26,6 @@
       @dirtyXs = undefined
       @eventQueue = []
       @lastRefresh = 0
-      @fps = 20
 
       $.extend true, @, $.si.smallimap.defaults, options
 
