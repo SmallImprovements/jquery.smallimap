@@ -16,7 +16,7 @@
         height: 500,
         colors: {
           lights: ["#fdf6e3", "#fafafa", "#dddddd", "#93a1a1", "#839496"],
-          darks: ["#002b36", "#073642", "#586e75", "#657b83"],
+          darks: ["#002b36", "#073642", "#999999", "#657b83"],
           land: {
             day: function(smallimap) {
               return smallimap.colors.lights.slice(1).concat(smallimap.colors.darks.slice(1).reverse());
@@ -297,13 +297,13 @@
         return this.eventQueue.push(event);
       };
 
-      Smallimap.prototype.addMapIcon = function(title, label, iconUrl, longitude, latitude) {
+      Smallimap.prototype.addMapIcon = function(title, label, iconMarker, iconUrl, longitude, latitude) {
         var mapX, mapY;
         longitude = parseFloat(longitude);
         latitude = parseFloat(latitude);
         mapX = this.longToX(longitude) * this.dotDiameter + this.dotRadius;
         mapY = this.latToY(latitude) * this.dotDiameter + this.dotRadius;
-        return this.mapIcons.push(new MapIcon(this.obj, title, label, iconUrl, mapX, mapY));
+        return this.mapIcons.push(new MapIcon(this.obj, title, label, iconMarker, iconUrl, mapX, mapY));
       };
 
       return Smallimap;
@@ -511,15 +511,15 @@
         if (duration > 0) {
           this.enqueue(new DelayEffect(dot, delay, {
             callback: function() {
-              return _this.enqueue(new ColorEffect(dot, duration, {
+              return _this.enqueue(new ColorEffect(dot, duration / 9, {
                 startColor: startColor,
                 endColor: endColor,
-                easing: easing.cubic,
+                easing: easing.quadratic,
                 callback: function() {
-                  return _this.enqueue(new ColorEffect(dot, duration * 8, {
+                  return _this.enqueue(new ColorEffect(dot, duration * 8 / 9, {
                     startColor: endColor,
                     endColor: startColor,
-                    easing: easing.inverse(easing.cubic)
+                    easing: easing.inverse(easing.quadratic)
                   }));
                 }
               }));
@@ -527,12 +527,12 @@
           }));
           return this.enqueue(new DelayEffect(dot, delay, {
             callback: function() {
-              return _this.enqueue(new RadiusEffect(dot, duration, {
+              return _this.enqueue(new RadiusEffect(dot, duration / 9, {
                 startRadius: startRadius,
                 endRadius: endRadius,
                 easing: easing.cubic,
                 callback: function() {
-                  return _this.enqueue(new RadiusEffect(dot, duration * 8, {
+                  return _this.enqueue(new RadiusEffect(dot, duration * 8 / 9, {
                     startRadius: endRadius,
                     endRadius: startRadius
                   }));
@@ -586,10 +586,11 @@
     })(GeoEvent);
     MapIcon = (function() {
 
-      function MapIcon(mapContainer, title, label, iconUrl, x, y) {
+      function MapIcon(mapContainer, title, label, iconMarker, iconUrl, x, y) {
         this.mapContainer = mapContainer;
         this.title = title;
         this.label = label;
+        this.iconMarker = iconMarker;
         this.iconUrl = iconUrl;
         this.x = x;
         this.y = y;
@@ -603,12 +604,12 @@
       MapIcon.prototype.init = function() {
         var iconHtml,
           _this = this;
-        iconHtml = "<div class=\"smallipop smallimap-mapicon\">\n  <img src=\"" + this.iconUrl + "\" alt=\"" + this.title + "\"/>\n  <div class=\"smallipopHint\">\n    <b class=\"smallimap-icon-title\">" + this.title + "</b><br/>\n    <p class=\"smallimap-icon-label\">" + this.label + "</p>\n  </div>\n</div>";
+        iconHtml = "<div class=\"smallipop smallimap-mapicon\">\n  <img src=\"" + this.iconMarker + "\" alt=\"" + this.title + "\"/>\n  <div class=\"smallipopHint\">\n    <img class=\"smallimap-icon\" src=\"" + this.iconUrl + "\"/>\n    <p class=\"smallimap-icon-label\">" + this.label + "</p>\n    <span class=\"smallimap-icon-title\">" + this.title + "</span>\n  </div>\n</div>";
         this.iconObj = $(iconHtml);
-        this.iconObjImage = this.iconObj.find('img');
+        this.iconObjImage = this.iconObj.children('img');
         return this.iconObjImage.load(function() {
-          _this.width = 24;
-          _this.height = 24;
+          _this.width = _this.iconObjImage.get(0).width || 24;
+          _this.height = _this.iconObjImage.get(0).height || 24;
           _this.iconObjImage.css({
             width: '100%',
             height: '100%'
@@ -616,13 +617,17 @@
           _this.iconObj.css({
             position: 'absolute',
             left: _this.x - _this.width / 2,
-            top: _this.y - _this.height / 2,
+            top: _this.y - _this.height,
             width: _this.width,
             height: _this.height
           });
           _this.mapContainer.append(_this.iconObj);
           return _this.iconObj.smallipop({
-            theme: 'white'
+            theme: 'white',
+            hideTrigger: true,
+            popupDistance: 10,
+            popupYOffset: 10,
+            popupAnimationSpeed: 200
           });
         });
       };

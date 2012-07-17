@@ -10,7 +10,7 @@
       height: 500
       colors:
         lights: ["#fdf6e3", "#fafafa", "#dddddd", "#93a1a1", "#839496"]
-        darks: ["#002b36", "#073642", "#586e75", "#657b83"]
+        darks: ["#002b36", "#073642", "#999999", "#657b83"]
         land:
           day: (smallimap) ->
             smallimap.colors.lights.slice(1).concat(smallimap.colors.darks.slice(1).reverse())
@@ -200,14 +200,14 @@
       event.init()
       @eventQueue.push(event)
 
-    addMapIcon: (title, label, iconUrl, longitude, latitude) =>
+    addMapIcon: (title, label, iconMarker, iconUrl, longitude, latitude) =>
       longitude = parseFloat longitude
       latitude = parseFloat latitude
 
       mapX = @longToX(longitude) * @dotDiameter + @dotRadius
       mapY = @latToY(latitude) * @dotDiameter + @dotRadius
 
-      @mapIcons.push new MapIcon(@obj, title, label, iconUrl, mapX, mapY)
+      @mapIcons.push new MapIcon(@obj, title, label, iconMarker, iconUrl, mapX, mapY)
 
   class Effect
 
@@ -313,26 +313,26 @@
       if duration > 0
         @enqueue new DelayEffect(dot, delay,
           callback: =>
-            @enqueue new ColorEffect(dot, duration,
+            @enqueue new ColorEffect(dot, duration/9,
               startColor: startColor
               endColor: endColor
-              easing: easing.cubic
+              easing: easing.quadratic
               callback: =>
-                @enqueue new ColorEffect(dot, duration*8,
+                @enqueue new ColorEffect(dot, duration*8/9,
                   startColor: endColor
                   endColor: startColor
-                  easing: easing.inverse easing.cubic
+                  easing: easing.inverse easing.quadratic
                 )
             )
         )
         @enqueue new DelayEffect(dot, delay,
           callback: =>
-            @enqueue new RadiusEffect(dot, duration,
+            @enqueue new RadiusEffect(dot, duration/9,
               startRadius: startRadius
               endRadius: endRadius
               easing: easing.cubic
               callback: =>
-                @enqueue new RadiusEffect(dot, duration*8, { startRadius: endRadius, endRadius: startRadius })
+                @enqueue new RadiusEffect(dot, duration*8/9, { startRadius: endRadius, endRadius: startRadius })
             )
         )
 
@@ -362,25 +362,26 @@
       )
 
   class MapIcon
-    constructor: (@mapContainer, @title, @label, @iconUrl, @x, @y) ->
+    constructor: (@mapContainer, @title, @label, @iconMarker, @iconUrl, @x, @y) ->
       @init()
 
     init: =>
       iconHtml = """
         <div class=\"smallipop smallimap-mapicon\">
-          <img src=\"#{@iconUrl}\" alt=\"#{@title}\"/>
+          <img src=\"#{@iconMarker}\" alt=\"#{@title}\"/>
           <div class=\"smallipopHint\">
-            <b class=\"smallimap-icon-title\">#{@title}</b><br/>
+            <img class=\"smallimap-icon\" src=\"#{@iconUrl}"/>
             <p class=\"smallimap-icon-label\">#{@label}</p>
+            <span class=\"smallimap-icon-title\">#{@title}</span>
           </div>
         </div>
       """
       @iconObj = $ iconHtml
 
-      @iconObjImage = @iconObj.find 'img'
+      @iconObjImage = @iconObj.children 'img'
       @iconObjImage.load =>
-        @width = 24#@iconObjImage.get(0).width or 24
-        @height = 24#@iconObjImage.get(0).height or 24
+        @width = @iconObjImage.get(0).width or 24
+        @height = @iconObjImage.get(0).height or 24
 
         @iconObjImage.css
           width: '100%'
@@ -389,13 +390,17 @@
         @iconObj.css
           position: 'absolute'
           left: @x - @width / 2
-          top: @y - @height / 2
+          top: @y - @height
           width: @width
           height: @height
 
         @mapContainer.append @iconObj
         @iconObj.smallipop
           theme: 'white'
+          hideTrigger: true
+          popupDistance: 10
+          popupYOffset: 10
+          popupAnimationSpeed: 200
 
     remove: =>
       @iconObj.remove()

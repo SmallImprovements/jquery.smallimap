@@ -47,16 +47,16 @@
 
           switch (event.category) {
             case 'appraisal':
-              eventColor = '#b4da4d'; // Yellow/Green
+              eventColor = '#658413'; // Yellow/Green
               break;
             case 'feedback':
-              eventColor = '#35ac46'; // Light green
+              eventColor = '#849022'; // Light green
               break;
             case 'objective':
-              eventColor = '#64a3e3'; // Blue
+              eventColor = '#31577e'; // Blue
               break;
             case 'admin':
-              eventColor = '#eaab48'; // Orange
+              eventColor = '#ff9c00'; // Orange
               break;
             default:
               eventColor = '#ff00ff'; // Pink
@@ -86,7 +86,7 @@
             for (; idx < data.length; idx++) {
               client = data[idx];
               log("Adding icon for " + client);
-              smallimap.addMapIcon(client.name, client.quote, 'img/si.png', client.longitude, client.latitude);
+              smallimap.addMapIcon(client.name, client.quote, 'img/marker.png', 'img/si.png', client.longitude, client.latitude);
             }
           });
         }

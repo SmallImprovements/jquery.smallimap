@@ -1,3 +1,66 @@
+body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, code, form, fieldset, legend, input, textarea, p, blockquote, th, td {
+  margin: 0;
+  padding: 0;
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+fieldset, img {
+  border: 0;
+}
+
+address, caption, cite, code, dfn, em, strong, th, var {
+  font-style: normal;
+  font-weight: normal;
+}
+
+li {
+  list-style: none;
+}
+
+caption, th {
+  text-align: left;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-size: 100%;
+  font-weight: normal;
+}
+
+q:before, q:after {
+  content: '';
+}
+
+abbr, acronym {
+  border: 0;
+  font-variant: normal;
+}
+
+sup {
+  vertical-align: text-top;
+}
+
+sub {
+  vertical-align: text-bottom;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+input, textarea, select {
+  *font-size: 100%;
+}
+
+legend {
+  color: #000;
+}
+
 body {
   color: #333;
   font-family: arial;
@@ -5,8 +68,13 @@ body {
 }
 
 .main {
+  padding: 50px 0;
   width: 1000px;
   margin: 0 auto;
+}
+
+.clear {
+  clear: both;
 }
 
 #smallimap {
@@ -31,23 +99,13 @@ body {
   display: block;
 }
 
-.smallimap-mapicon {
-  opacity: 0.7;
-  -webkit-transition: all 0.1s ease-in-out;
-  -moz-transition: all 0.1s ease-in-out;
-  -ms-transition: all 0.1s ease-in-out;
-  -o-transition: all 0.1s ease-in-out;
-  transition: all 0.1s ease-in-out;
+#smallipop .sipContent .smallimap-icon-label {
+  color: #666;
+  font-style: italic;
+  font-size: 13px;
 }
-.smallimap-mapicon:hover {
-  opacity: 1;
-  -webkit-transform: scale(1.4);
-  -moz-transform: scale(1.4);
-  -ms-transform: scale(1.4);
-  -o-transform: scale(1.4);
-  transform: scale(1.4);
-}
-
-#smallipop .sipContent {
-  text-align: center;
+#smallipop .sipContent .smallimap-icon-title {
+  color: #888;
+  font-weight: bold;
+  font-size: 10px;
 }
