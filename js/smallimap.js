@@ -420,7 +420,7 @@
               nx = this.x + i;
               ny = this.y + j;
               d = Math.sqrt(i * i + j * j);
-              if (d <= this.eventRadius && this.smallimap.grid[nx] && this.smallimap.grid[nx][ny]) {
+              if (d < this.eventRadius + 0.5 && this.smallimap.grid[nx] && this.smallimap.grid[nx][ny]) {
                 dot = this.smallimap.grid[nx][ny];
                 _results1.push(this.initEventsForDot(nx, ny, d, dot));
               } else {
@@ -445,27 +445,29 @@
         BlipEvent.__super__.constructor.call(this, smallimap, options);
         this.color = new Color(options.color || "#336699");
         this.duration = options.duration || 1024;
-        this.weight = options.weight || 1;
+        this.weight = options.weight || 0.5;
       }
 
       BlipEvent.prototype.initEventsForDot = function(nx, ny, d, dot) {
-        var delay, duration, endColor, endRadius, startColor, startRadius,
+        var delay, endColor, endRadius, fadeInDuration, fadeOutDuration, ratio, startColor, startRadius,
           _this = this;
-        delay = this.duration * d / (this.eventRadius + 1);
-        duration = this.duration - delay;
+        ratio = Math.sqrt(d / this.eventRadius * this.weight);
+        delay = this.duration * ratio / 2;
+        fadeInDuration = this.duration / 9 * (1 - ratio);
+        fadeOutDuration = this.duration * 8 / 9 * (1 - ratio);
         startColor = dot.initial.color;
         startRadius = dot.initial.radius;
-        endColor = new Color(this.color.rgbString()).mix(startColor, d / this.eventRadius * (1 - this.weight));
+        endColor = new Color(this.color.rgbString()).mix(startColor, ratio);
         endRadius = (this.smallimap.dotRadius - startRadius) * this.weight / (d + 1) + startRadius;
-        if (duration > 0) {
+        if (fadeInDuration > 0) {
           return this.enqueue(new DelayEffect(dot, delay, {
             callback: function() {
-              return _this.enqueue(new ColorEffect(dot, duration / 9, {
+              return _this.enqueue(new ColorEffect(dot, fadeInDuration, {
                 startColor: startColor,
                 endColor: endColor,
                 easing: easing.quadratic,
                 callback: function() {
-                  return _this.enqueue(new ColorEffect(dot, duration * 8 / 9, {
+                  return _this.enqueue(new ColorEffect(dot, fadeOutDuration, {
                     startColor: endColor,
                     endColor: startColor,
                     easing: easing.inverse(easing.quadratic)

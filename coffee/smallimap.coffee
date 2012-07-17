@@ -255,7 +255,7 @@
           nx = @x + i
           ny = @y + j
           d = Math.sqrt(i * i + j * j)
-          if d <= @eventRadius and @smallimap.grid[nx] and @smallimap.grid[nx][ny]
+          if d < @eventRadius + 0.5 and @smallimap.grid[nx] and @smallimap.grid[nx][ny]
             dot = @smallimap.grid[nx][ny]
             @initEventsForDot nx, ny, d, dot
 
@@ -264,24 +264,26 @@
       super smallimap, options
       @color = new Color(options.color or "#336699")
       @duration = options.duration or 1024
-      @weight = options.weight || 1
+      @weight = options.weight || 0.5
 
     initEventsForDot: (nx, ny, d, dot) =>
-      delay = @duration * d/(@eventRadius + 1)
-      duration = @duration - delay
+      ratio = Math.sqrt(d/@eventRadius*@weight)
+      delay = @duration * ratio / 2
+      fadeInDuration = @duration/9 * (1 - ratio)
+      fadeOutDuration = @duration*8/9 * (1 - ratio)
       startColor = dot.initial.color
       startRadius = dot.initial.radius
-      endColor = new Color(@color.rgbString()).mix(startColor, d/@eventRadius*(1-@weight))
+      endColor = new Color(@color.rgbString()).mix(startColor, ratio)
       endRadius = (@smallimap.dotRadius - startRadius)*@weight/(d+1) + startRadius
-      if duration > 0
+      if fadeInDuration > 0
         @enqueue new DelayEffect(dot, delay,
           callback: =>
-            @enqueue new ColorEffect(dot, duration/9,
+            @enqueue new ColorEffect(dot, fadeInDuration,
               startColor: startColor
               endColor: endColor
               easing: easing.quadratic
               callback: =>
-                @enqueue new ColorEffect(dot, duration*8/9,
+                @enqueue new ColorEffect(dot, fadeOutDuration,
                   startColor: endColor
                   endColor: startColor
                   easing: easing.inverse(easing.quadratic)
