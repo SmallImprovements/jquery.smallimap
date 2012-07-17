@@ -15,8 +15,7 @@
 
   class Smallimap
 
-    constructor: (cwidth, cheight, renderContext, world, options={}) ->
-      @world = world
+    constructor: (@obj, cwidth, cheight, @renderContext, @world, options={}) ->
       @dotRadius = 3.2
       @dotDiameter = @dotRadius * 2
       @width = cwidth / @dotDiameter
@@ -27,7 +26,6 @@
       @eventQueue = []
       @lastRefresh = 0
       @fps = 20
-      @renderContext = renderContext
 
       $.extend true, @, $.si.smallimap.defaults, options
 
@@ -216,6 +214,10 @@
     enqueueEvent: (event) =>
       @eventQueue.push(event)
 
+    addMapIcon: (title, label, iconUrl, longitude, latitude) =>
+      @mapIcons.push new MapIcon(title, label, iconUrl, @longToX, @latToY)
+
+
   class Effect
 
     constructor: (@dot, @duration, options) ->
@@ -329,6 +331,31 @@
                     @enqueue new RadiusEffect(dot, duration, { startRadius: endRadius, endRadius: startRadius })
                 )
 
+  class MapIcon
+    constructor: (mapContainer, @title, @label, @iconUrl, @x, @y) ->
+      @init()
+
+    init: =>
+      iconHtml = """
+        <div class=\"smallipop\">
+          <img src=\"#{@iconUrl}\" alt=\"#{@title}\"/>
+          <div class=\"smallipopHint\">
+            <b class=\"smallimap-icon-title\">#{@title}</b><br/>
+            <p class=\"smallimap-icon-label\">#{@label}</p>
+          </div>
+        </div>
+      """
+
+      @iconObj = $(iconHtml).css
+        left: @x
+        top: @y
+
+      mapContainer.append @iconObj
+      @iconObj.smallipop()
+
+    remove: =>
+      @iconObj.remove()
+
   $.si.smallimap.effects =
     Effect: Effect
     ColorEffect: ColorEffect
@@ -346,7 +373,7 @@
       self = $(@)
       canvas = @
       ctx = canvas.getContext '2d'
-      smallimap = new Smallimap(canvas.width, canvas.height, ctx, smallimapWorld, options)
+      smallimap = new Smallimap(self, canvas.width, canvas.height, ctx, smallimapWorld, options)
 
       self.data 'api', smallimap
 
