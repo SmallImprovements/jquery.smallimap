@@ -555,28 +555,21 @@
         this.y = y;
         this.remove = __bind(this.remove, this);
 
-        this.onHover = __bind(this.onHover, this);
-
         this.init = __bind(this.init, this);
 
-        this.initialOpacity = 0.7;
-        this.zoom = 1.5;
         this.init();
       }
 
       MapIcon.prototype.init = function() {
         var iconHtml,
           _this = this;
-        iconHtml = "<div class=\"smallipop\">\n  <img src=\"" + this.iconUrl + "\" alt=\"" + this.title + "\"/>\n  <div class=\"smallipopHint\">\n    <b class=\"smallimap-icon-title\">" + this.title + "</b><br/>\n    <p class=\"smallimap-icon-label\">" + this.label + "</p>\n  </div>\n</div>";
+        iconHtml = "<div class=\"smallipop smallimap-mapicon\">\n  <img src=\"" + this.iconUrl + "\" alt=\"" + this.title + "\"/>\n  <div class=\"smallipopHint\">\n    <b class=\"smallimap-icon-title\">" + this.title + "</b><br/>\n    <p class=\"smallimap-icon-label\">" + this.label + "</p>\n  </div>\n</div>";
         this.iconObj = $(iconHtml);
         this.iconObjImage = this.iconObj.find('img');
         return this.iconObjImage.load(function() {
-          _this.width = _this.iconObjImage.get(0).width || 24;
-          _this.height = _this.iconObjImage.get(0).height || 24;
-          _this.iconObjImage.attr({
-            width: _this.width,
-            height: _this.height
-          }).css({
+          _this.width = 24;
+          _this.height = 24;
+          _this.iconObjImage.css({
             width: '100%',
             height: '100%'
           });
@@ -584,33 +577,14 @@
             position: 'absolute',
             left: _this.x - _this.width / 2,
             top: _this.y - _this.height / 2,
-            opacity: 0
-          }).bind('mouseover mouseout', _this.onHover);
+            width: _this.width,
+            height: _this.height
+          });
           _this.mapContainer.append(_this.iconObj);
-          return _this.iconObj.fadeTo(200, _this.initialOpacity).smallipop({
+          return _this.iconObj.smallipop({
             theme: 'black'
           });
         });
-      };
-
-      MapIcon.prototype.onHover = function(e) {
-        if (e.type === 'mouseover') {
-          return this.iconObj.stop().animate({
-            opacity: 1,
-            left: this.x - (this.width * this.zoom) / 2,
-            top: this.y - (this.height * this.zoom) / 2,
-            width: this.width * this.zoom,
-            height: this.height * this.zoom
-          }, 100);
-        } else {
-          return this.iconObj.stop().animate({
-            opacity: this.initialOpacity,
-            left: this.x - this.width / 2,
-            top: this.y - this.height / 2,
-            width: this.width,
-            height: this.height
-          }, 200);
-        }
       };
 
       MapIcon.prototype.remove = function() {

@@ -344,13 +344,11 @@
 
   class MapIcon
     constructor: (@mapContainer, @title, @label, @iconUrl, @x, @y) ->
-      @initialOpacity = 0.7
-      @zoom = 1.5
       @init()
 
     init: =>
       iconHtml = """
-        <div class=\"smallipop\">
+        <div class=\"smallipop smallimap-mapicon\">
           <img src=\"#{@iconUrl}\" alt=\"#{@title}\"/>
           <div class=\"smallipopHint\">
             <b class=\"smallimap-icon-title\">#{@title}</b><br/>
@@ -362,13 +360,10 @@
 
       @iconObjImage = @iconObj.find 'img'
       @iconObjImage.load =>
-        @width = @iconObjImage.get(0).width or 24
-        @height = @iconObjImage.get(0).height or 24
+        @width = 24#@iconObjImage.get(0).width or 24
+        @height = 24#@iconObjImage.get(0).height or 24
 
-        @iconObjImage.attr
-          width: @width
-          height: @height
-        .css
+        @iconObjImage.css
           width: '100%'
           height: '100%'
 
@@ -376,30 +371,12 @@
           position: 'absolute'
           left: @x - @width / 2
           top: @y - @height / 2
-          opacity: 0
-        .bind 'mouseover mouseout', @onHover
+          width: @width
+          height: @height
 
         @mapContainer.append @iconObj
-        @iconObj.fadeTo(200, @initialOpacity).smallipop
+        @iconObj.smallipop
           theme: 'black'
-
-    onHover: (e) =>
-      if e.type is 'mouseover'
-        @iconObj.stop().animate
-            opacity: 1
-            left: @x - (@width * @zoom) / 2
-            top: @y - (@height * @zoom) / 2
-            width: @width * @zoom
-            height: @height * @zoom
-          ,100
-      else
-        @iconObj.stop().animate
-            opacity: @initialOpacity
-            left: @x - @width / 2
-            top: @y - @height / 2
-            width: @width
-            height: @height
-          ,200
 
     remove: =>
       @iconObj.remove()
