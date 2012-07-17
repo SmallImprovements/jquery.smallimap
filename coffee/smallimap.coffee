@@ -67,26 +67,9 @@
       for x in [0..width - 1]
         for y in [0..height - 1]
           grid[x] ||= []
-          grid[x][y] = @dot(x, y, @landinessOf(x, y))
+          grid[x][y] = new MapDot(@, x, y, @landinessOf(x, y))
 
       return grid
-
-    dot: (x, y, landiness) =>
-      newDot =
-        x: x
-        y: y
-        landiness: landiness
-        initial:
-          color: @colorFor @xToLong(x), @yToLat(y), landiness
-          radius: @dotRadius * 0.64
-        target : {}
-        dirty: true
-        setRadius: (radius) =>
-          @setRadius x, y, radius
-        setColor: (color) =>
-          @setColor x, y, color
-
-      return newDot
 
     longToX: (longitude) ->
       Math.floor((longitude + 180) * @width / 360 + 0.5) # <- round
@@ -156,26 +139,6 @@
     reset: (x, y) =>
       @markDirty x, y
 
-    setRadius: (x, y, r) =>
-      target = @grid[x][y].target
-
-      if target.radius
-        target.radius = (target.radius + r) / 2
-      else
-        target.radius = r
-
-      @markDirty x, y
-
-    setColor: (x, y, color) =>
-      target = @grid[x][y].target
-
-      if target.color
-        target.color = target.color.mix color
-      else
-        target.color = color
-
-      @markDirty x, y
-
     triggerOverlay: =>
         y = 0
         push = (x, dt) =>
@@ -184,7 +147,7 @@
 
           setDots = (r) =>
             for y in [0..@height - 1]
-              @setRadius x, y, r
+              @grid[x][y].setRadius r
 
           @eventQueue.push =>
             setDots r + dt
@@ -361,6 +324,30 @@
           )
       )
 
+  class MapDot
+    constructor: (@smallimap, @x, @y, @landiness) ->
+      @target = {}
+      @dirty = true
+      @initial =
+        color: @smallimap.colorFor @smallimap.xToLong(@x), @smallimap.yToLat(@y), @landiness
+        radius: @smallimap.dotRadius * 0.64
+
+    setRadius: (radius) =>
+      if @target.radius
+        @target.radius = (@target.radius + radius) / 2
+      else
+        @target.radius = radius
+
+      @smallimap.markDirty @x, @y
+
+    setColor: (color) =>
+      if @target.color
+        @target.color = @target.color.mix color
+      else
+        @target.color = color
+
+      @smallimap.markDirty @x, @y
+
   class MapIcon
     constructor: (@mapContainer, @title, @label, @iconMarker, @iconUrl, @x, @y) ->
       @init()
@@ -369,14 +356,18 @@
       iconHtml = """
         <div class=\"smallipop smallimap-mapicon\">
           <img src=\"#{@iconMarker}\" alt=\"#{@title}\"/>
-          <div class=\"smallipopHint\">
-            <img class=\"smallimap-icon\" src=\"#{@iconUrl}"/>
-            <p class=\"smallimap-icon-label\">#{@label}</p>
-            <span class=\"smallimap-icon-title\">#{@title}</span>
-          </div>
+          <div class=\"smallipopHint\"></div>
         </div>
       """
       @iconObj = $ iconHtml
+
+      hintContent = @iconObj.children 'div'
+      if @iconUrl
+        hintContent.append "<img class=\"smallimap-icon\" src=\"#{@iconUrl}\"/>"
+      if @label
+        hintContent.append "<p class=\"smallimap-icon-label\">#{@label}</p>"
+      if @title
+        hintContent.append "<span class=\"smallimap-icon-title\">#{@title}</span>"
 
       @iconObjImage = @iconObj.children 'img'
       @iconObjImage.load =>
