@@ -89,11 +89,21 @@
       sunSet = new SunriseSunset(now.getYear(), now.getMonth() + 1, now.getDate(), latitude, longitude)
       landColors = @colors.land.day(@)
       idx = Math.floor(darkness * (landColors.length - 2))
-
       if sunSet.isDaylight(now.getHours()) or latitude >= 69
         new Color(landColors[idx])
       else
         new Color(landColors[idx + 1])
+      #new Color("#333333")
+
+    radiusFor: (longitude, latitude, landiness) =>
+      now = new Date()
+      sunSet = new SunriseSunset(now.getYear(), now.getMonth() + 1, now.getDate(), latitude, longitude)
+
+      # if lat >= 69 the northpole should get it well deserved sunshine
+      if sunSet.isDaylight(now.getHours()) or latitude >= 69
+        @dotRadius * Math.max(0.2, landiness) * 0.6
+      else
+        @dotRadius * Math.max(0.25, landiness) * 0.78
 
     convertToWorldX: (x) =>
       Math.floor(x * @world.length / @width)
@@ -272,9 +282,12 @@
       fadeInDuration = @duration/9 * (1 - ratio)
       fadeOutDuration = @duration*8/9 * (1 - ratio)
       startColor = dot.initial.color
-      startRadius = dot.initial.radius
+        c
       endColor = new Color(@color.rgbString()).mix(startColor, ratio*ratio)
-      endRadius = (@smallimap.dotRadius - startRadius)*(1 - ratio) + startRadius
+      if(startRadius >= @smallimap.dotRadius * 0.5)
+        endRadius = startRadius - startRadius*0.5*(1 - ratio)
+      else
+        endRadius = (@smallimap.dotRadius - startRadius)*(1 - ratio) + startRadius
       if fadeInDuration > 0
         @enqueue new DelayEffect(dot, delay,
           callback: =>
@@ -294,7 +307,11 @@
               endRadius: endRadius
               easing: easing.linear
               callback: =>
-                @enqueue new RadiusEffect(dot, fadeOutDuration, { startRadius: endRadius, endRadius: startRadius })
+                @enqueue new RadiusEffect(dot, fadeOutDuration,
+                  startRadius: endRadius
+                  endRadius: startRadius
+                  easing: Math.sqrt
+                )
             )
         )
 
@@ -328,8 +345,8 @@
       @target = {}
       @dirty = true
       @initial =
-        color: @smallimap.colorFor @smallimap.xToLong(@x), @smallimap.yToLat(@y), @landiness
-        radius: @smallimap.dotRadius * 0.64
+        color: new Color("#333") #@smallimap.colorFor @smallimap.xToLong(@x), @smallimap.yToLat(@y), @landiness
+        radius: @smallimap.radiusFor @smallimap.xToLong(@x), @smallimap.yToLat(@y), @landiness
 
     setRadius: (radius) =>
       if @target.radius

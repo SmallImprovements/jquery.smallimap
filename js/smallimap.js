@@ -55,6 +55,8 @@
 
         this.convertToWorldX = __bind(this.convertToWorldX, this);
 
+        this.radiusFor = __bind(this.radiusFor, this);
+
         this.colorFor = __bind(this.colorFor, this);
 
         this.generateGrid = __bind(this.generateGrid, this);
@@ -152,6 +154,17 @@
           return new Color(landColors[idx]);
         } else {
           return new Color(landColors[idx + 1]);
+        }
+      };
+
+      Smallimap.prototype.radiusFor = function(longitude, latitude, landiness) {
+        var now, sunSet;
+        now = new Date();
+        sunSet = new SunriseSunset(now.getYear(), now.getMonth() + 1, now.getDate(), latitude, longitude);
+        if (sunSet.isDaylight(now.getHours()) || latitude >= 69) {
+          return this.dotRadius * Math.max(0.2, landiness) * 0.6;
+        } else {
+          return this.dotRadius * Math.max(0.25, landiness) * 0.78;
         }
       };
 
@@ -458,7 +471,11 @@
         startColor = dot.initial.color;
         startRadius = dot.initial.radius;
         endColor = new Color(this.color.rgbString()).mix(startColor, ratio * ratio);
-        endRadius = (this.smallimap.dotRadius - startRadius) * (1 - ratio) + startRadius;
+        if (startRadius >= this.smallimap.dotRadius * 0.5) {
+          endRadius = startRadius - startRadius * 0.5 * (1 - ratio);
+        } else {
+          endRadius = (this.smallimap.dotRadius - startRadius) * (1 - ratio) + startRadius;
+        }
         if (fadeInDuration > 0) {
           return this.enqueue(new DelayEffect(dot, delay, {
             callback: function() {
@@ -481,7 +498,8 @@
                 callback: function() {
                   return _this.enqueue(new RadiusEffect(dot, fadeOutDuration, {
                     startRadius: endRadius,
-                    endRadius: startRadius
+                    endRadius: startRadius,
+                    callback: function() {}
                   }));
                 }
               }));
@@ -545,8 +563,8 @@
         this.target = {};
         this.dirty = true;
         this.initial = {
-          color: this.smallimap.colorFor(this.smallimap.xToLong(this.x), this.smallimap.yToLat(this.y), this.landiness),
-          radius: this.smallimap.dotRadius * 0.64
+          color: new Color("#333"),
+          radius: this.smallimap.radiusFor(this.smallimap.xToLong(this.x), this.smallimap.yToLat(this.y), this.landiness)
         };
       }
 
