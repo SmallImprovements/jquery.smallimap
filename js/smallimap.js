@@ -5,7 +5,7 @@
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   (function($) {
-    var BlipEvent, ColorEffect, DelayEffect, Effect, Event, MapIcon, RadiusEffect, Smallimap;
+    var BlipEvent, ColorEffect, DelayEffect, Effect, Event, GeoAreaEvent, GeoEvent, LensEvent, MapIcon, RadiusEffect, Smallimap, easing;
     $.si || ($.si = {});
     $.si.smallimap = {
       version: '0.1',
@@ -40,8 +40,6 @@
         this.addMapIcon = __bind(this.addMapIcon, this);
 
         this.enqueueEvent = __bind(this.enqueueEvent, this);
-
-        this.newMouseHover = __bind(this.newMouseHover, this);
 
         this.triggerOverlay = __bind(this.triggerOverlay, this);
 
@@ -294,31 +292,6 @@
         return _results;
       };
 
-      Smallimap.prototype.newMouseHover = function(px, py) {
-        var d, dot, i, j, lastX, lastY, pushDown, radius, x, y, _i, _j;
-        x = Math.floor(px / this.dotDiameter);
-        y = Math.floor(py / this.dotDiameter);
-        radius = 2;
-        pushDown = function(x, y, initial, target) {
-          return true;
-        };
-        if (this.grid[x] && this.grid[x][y]) {
-          if (this.lastX !== x && this.lastY !== y) {
-            dot = this.grid[x][y];
-            for (i = _i = -radius; -radius <= radius ? _i <= radius : _i >= radius; i = -radius <= radius ? ++_i : --_i) {
-              for (j = _j = -radius; -radius <= radius ? _j <= radius : _j >= radius; j = -radius <= radius ? ++_j : --_j) {
-                d = Math.sqrt(i * i + j * j);
-                if (d < radius) {
-                  pushDown(x + i, y + j, dot.initial.radius, 2);
-                }
-              }
-            }
-            lastX = x;
-            return lastY = y;
-          }
-        }
-      };
-
       Smallimap.prototype.enqueueEvent = function(event) {
         event.init();
         return this.eventQueue.push(event);
@@ -346,13 +319,9 @@
         this.update = __bind(this.update, this);
 
         this.timeElapsed = 0;
-        this.easing = options.easing || this.linearEasing;
+        this.easing = options.easing || easing.linear;
         this.callback = options.callback;
       }
-
-      Effect.prototype.linearEasing = function(progress) {
-        return progress;
-      };
 
       Effect.prototype.update = function(dt) {
         this.timeElapsed += dt;
@@ -430,15 +399,15 @@
     })(Effect);
     Event = (function() {
 
-      function Event(smallimap, callback) {
+      function Event(smallimap, options) {
         this.smallimap = smallimap;
-        this.callback = callback;
         this.refresh = __bind(this.refresh, this);
 
         this.init = __bind(this.init, this);
 
         this.enqueue = __bind(this.enqueue, this);
 
+        this.callback = options.callback;
         this.queue = [];
       }
 
@@ -466,34 +435,41 @@
       return Event;
 
     })();
-    BlipEvent = (function(_super) {
+    GeoEvent = (function(_super) {
 
-      __extends(BlipEvent, _super);
+      __extends(GeoEvent, _super);
 
-      function BlipEvent(smallimap, options) {
-        this.initEventsForDot = __bind(this.initEventsForDot, this);
-
-        this.init = __bind(this.init, this);
-        BlipEvent.__super__.constructor.call(this, smallimap, options.callback);
+      function GeoEvent(smallimap, options) {
+        GeoEvent.__super__.constructor.call(this, smallimap, options);
         this.latitude = options.latitude;
         this.longitude = options.longitude;
-        this.color = new Color(options.color || "#336699");
-        this.eventRadius = options.eventRadius || 8;
-        this.duration = options.duration || 1024;
+        this.x = this.smallimap.longToX(this.longitude);
+        this.y = this.smallimap.latToY(this.latitude);
       }
 
-      BlipEvent.prototype.init = function() {
-        var d, dot, i, j, nx, ny, x, y, _i, _ref, _ref1, _results;
-        x = this.smallimap.longToX(this.longitude);
-        y = this.smallimap.latToY(this.latitude);
+      return GeoEvent;
+
+    })(Event);
+    GeoAreaEvent = (function(_super) {
+
+      __extends(GeoAreaEvent, _super);
+
+      function GeoAreaEvent(smallimap, options) {
+        this.init = __bind(this.init, this);
+        GeoAreaEvent.__super__.constructor.call(this, smallimap, options);
+        this.eventRadius = options.eventRadius || 8;
+      }
+
+      GeoAreaEvent.prototype.init = function() {
+        var d, dot, i, j, nx, ny, _i, _ref, _ref1, _results;
         _results = [];
         for (i = _i = _ref = -this.eventRadius, _ref1 = this.eventRadius; _ref <= _ref1 ? _i <= _ref1 : _i >= _ref1; i = _ref <= _ref1 ? ++_i : --_i) {
           _results.push((function() {
             var _j, _ref2, _ref3, _results1;
             _results1 = [];
             for (j = _j = _ref2 = -this.eventRadius, _ref3 = this.eventRadius; _ref2 <= _ref3 ? _j <= _ref3 : _j >= _ref3; j = _ref2 <= _ref3 ? ++_j : --_j) {
-              nx = x + i;
-              ny = y + j;
+              nx = this.x + i;
+              ny = this.y + j;
               d = Math.sqrt(i * i + j * j);
               if (d < this.eventRadius && this.smallimap.grid[nx] && this.smallimap.grid[nx][ny]) {
                 dot = this.smallimap.grid[nx][ny];
@@ -508,6 +484,21 @@
         return _results;
       };
 
+      return GeoAreaEvent;
+
+    })(GeoEvent);
+    BlipEvent = (function(_super) {
+
+      __extends(BlipEvent, _super);
+
+      function BlipEvent(smallimap, options) {
+        this.initEventsForDot = __bind(this.initEventsForDot, this);
+        BlipEvent.__super__.constructor.call(this, smallimap, options);
+        this.color = new Color(options.color || "#336699");
+        this.duration = options.duration || 1024;
+        this.weight = options.weight || 1;
+      }
+
       BlipEvent.prototype.initEventsForDot = function(nx, ny, d, dot) {
         var delay, duration, endColor, endRadius, startColor, startRadius,
           _this = this;
@@ -515,26 +506,37 @@
         duration = this.duration - delay;
         startColor = dot.initial.color;
         startRadius = dot.initial.radius;
-        endColor = new Color(this.color.rgbString());
-        endRadius = (this.smallimap.dotRadius - startRadius) / (d + 1) + startRadius;
+        endColor = new Color(this.color.rgbString()).mix(startColor, d / this.eventRadius * this.weight);
+        endRadius = (this.smallimap.dotRadius - startRadius) * this.weight / (d + 1) + startRadius;
         if (duration > 0) {
-          this.enqueue(new ColorEffect(dot, duration, {
-            startColor: startColor,
-            endColor: endColor,
+          this.enqueue(new DelayEffect(dot, delay, {
             callback: function() {
               return _this.enqueue(new ColorEffect(dot, duration, {
-                startColor: endColor,
-                endColor: startColor
+                startColor: startColor,
+                endColor: endColor,
+                easing: easing.cubic,
+                callback: function() {
+                  return _this.enqueue(new ColorEffect(dot, duration * 8, {
+                    startColor: endColor,
+                    endColor: startColor,
+                    easing: easing.inverse(easing.cubic)
+                  }));
+                }
               }));
             }
           }));
-          return this.enqueue(new RadiusEffect(dot, duration, {
-            startRadius: startRadius,
-            endRadius: endRadius,
+          return this.enqueue(new DelayEffect(dot, delay, {
             callback: function() {
               return _this.enqueue(new RadiusEffect(dot, duration, {
-                startRadius: endRadius,
-                endRadius: startRadius
+                startRadius: startRadius,
+                endRadius: endRadius,
+                easing: easing.cubic,
+                callback: function() {
+                  return _this.enqueue(new RadiusEffect(dot, duration * 8, {
+                    startRadius: endRadius,
+                    endRadius: startRadius
+                  }));
+                }
               }));
             }
           }));
@@ -543,7 +545,45 @@
 
       return BlipEvent;
 
-    })(Event);
+    })(GeoAreaEvent);
+    LensEvent = (function(_super) {
+
+      __extends(LensEvent, _super);
+
+      function LensEvent(smallimap, options) {
+        this.init = __bind(this.init, this);
+        LensEvent.__super__.constructor.call(this, smallimap, options);
+        this.delay = options.delay || 0;
+        this.duration = options.duration || 1024;
+        this.weight = options.weight || 1;
+        this.isOut = options.fade === "out";
+      }
+
+      LensEvent.prototype.init = function() {
+        var dot, duration, endRadius, startRadius,
+          _this = this;
+        dot = this.smallimap.grid[this.x][this.y];
+        duration = this.duration;
+        startRadius = dot.initial.radius;
+        endRadius = (this.smallimap.dotRadius - startRadius) * this.weight + startRadius;
+        if (this.isOut) {
+          startRadius = endRadius;
+          endRadius = dot.initial.radius;
+        }
+        return this.enqueue(new DelayEffect(dot, this.delay, {
+          callback: function() {
+            return _this.enqueue(new RadiusEffect(dot, _this.duration, {
+              startRadius: startRadius,
+              endRadius: endRadius,
+              easing: easing.quadratic
+            }));
+          }
+        }));
+      };
+
+      return LensEvent;
+
+    })(GeoEvent);
     MapIcon = (function() {
 
       function MapIcon(mapContainer, title, label, iconUrl, x, y) {
@@ -594,6 +634,22 @@
       return MapIcon;
 
     })();
+    easing = {
+      linear: function(progress) {
+        return progress;
+      },
+      quadratic: function(progress) {
+        return progress * progress;
+      },
+      cubic: function(progress) {
+        return progress * progress * progress;
+      },
+      inverse: function(easing) {
+        return function(progress) {
+          return 1 - easing(1 - progress);
+        };
+      }
+    };
     $.si.smallimap.effects = {
       Effect: Effect,
       ColorEffect: ColorEffect,
@@ -601,8 +657,10 @@
     };
     $.si.smallimap.events = {
       Event: Event,
-      BlipEvent: BlipEvent
+      BlipEvent: BlipEvent,
+      LensEvent: LensEvent
     };
+    $.si.smallimap.easing = easing;
     return $.fn.smallimap = function(options) {
       if (options == null) {
         options = {};
