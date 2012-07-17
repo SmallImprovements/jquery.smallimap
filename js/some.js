@@ -18,6 +18,7 @@
         soundEnabled: true,
         useLocalStorage: true,
         useLastKeyOnRequests: true,
+        requireLogin: false,
         animationSpeed: 150,
         alertTimeout: 3000,
         pollingInterval: 15000,
@@ -90,6 +91,8 @@
         this.setRunning = __bind(this.setRunning, this);
 
         this.setPaused = __bind(this.setPaused, this);
+
+        this.run = __bind(this.run, this);
 
         this.init = __bind(this.init, this);
 
@@ -179,14 +182,23 @@
               src = sounds[sound];
               sounds[sound] = src.replace(/mp3/g, 'ogg');
             }
-            return log(sounds);
+            log(sounds);
           } else if ((typeof Modernizr !== "undefined" && Modernizr !== null ? (_ref2 = Modernizr.audio) != null ? _ref2.mp3 : void 0 : void 0) != null) {
-            return log('Mp3 support for this browser is enabled');
+            log('Mp3 support for this browser is enabled');
           } else {
             this.soundEnabled = false;
-            return this.feedback('Your browser does not support our audio player at this time :-(');
+            this.feedback('Your browser does not support our audio player at this time :-(');
           }
         }
+        return this;
+      };
+
+      SonicMetricsClient.prototype.run = function() {
+        if (this.requireLogin && !this.loggedIn) {
+          return;
+        }
+        this.pollServer();
+        return this;
       };
 
       SonicMetricsClient.prototype.setPaused = function() {
@@ -215,11 +227,15 @@
       };
 
       SonicMetricsClient.prototype.pollServer = function() {
-        if (!this.loggedIn) {
+        if (this.requireLogin && !this.loggedIn) {
           return;
         }
         if (!this.paused) {
-          this.getEvents();
+          if (window.requestAnimationFrame) {
+            requestAnimationFrame(this.getEvents);
+          } else {
+            this.getEvents();
+          }
         }
         return this.pollingTimeoutId = window.setTimeout(this.pollServer, this.pollingInterval - this.clientComputationPollingOffset);
       };
@@ -286,7 +302,6 @@
         } else {
           this.feedback('Login failed!', 'error');
         }
-        this.pollServer();
         return this.loggedIn;
       };
 

@@ -20,13 +20,85 @@
     <script type="text/javascript">
 
       $(function() {
-        // Enabled debug mode for console messages
-        $.some.debug = true;
-        var smallimap;
+        var smallimap,
+            debugMode = true,
+            serverUrl = 'http://www.small-improvements.com';//'http://localhost:8080'
+
+        function log(message) {
+          if (window.console && $.some.debug)
+            window.console.log(message);
+        }
+
+        // Callback for activity listeners
+        function drawEventOnMap(listener, scheduledTimeout, event) {
+          log("Scheduling activity on the map for listener" + listener.name + " in " + scheduledTimeout + " ms");
+
+          var eventColor,
+              eventDuration = 1000,
+              eventWeight = 1;
+
+          switch (event.category) {
+            case 'appraisal':
+              eventColor = '#ff0000'; // Red
+              break;
+            case 'feedback':
+              eventColor = '#00ff00'; // Green
+              break;
+            case 'objective':
+              eventColor = '#0000ff'; // Blue
+              break;
+            case 'admin':
+              eventColor = '#ffff00'; // Brown
+              break;
+            default:
+              eventColor = '#ff00ff'; // Pink
+          }
+
+          window.setTimeout(function() {
+            log("Enqueing event on the map: " + event.label);
+
+            var newEvent = $.si.smallimap.events.BlipEvent(smallimap, {
+              latitude: event.latitude,
+              longitude: event.longitude,
+              color: eventColor,
+              weight: eventWeight,
+              length: eventDuration
+            });
+            smallimap.enqueEvent(newEvent);
+          }, scheduledTimeout);
+        }
+
+        // Query clients from the server and show them on the map
+        function getClientsForMap() {
+          $.getJSON(serverUrl + '/queryClientsJSON?callback=?', function(data) {
+            log("Queried clients from SI");
+            log(data);
+            // TODO: implement
+          });
+        }
+
+        // Test function for the map which creates random events all over the world
+        var testIntervalId = -1;
+        window.runTest = function() {
+          testIntervalId = setInterval(function() {
+            var event = new $.si.smallimap.events.BlipEvent(smallimap, {
+              latitude: 50,
+              longitude: 50,
+              color: '#ff00ff',
+              duration: 1000
+            });
+            event.init();
+            smallimap.enqueueEvent(event);
+          }, 180);
+        }
+        window.stopTest = function() {
+          clearInterval(testIntervalId);
+        }
 
         // Configure metrics client
+        $.some.debug = debugMode;
         var metricsClient = new $.some.SonicMetricsClient('SIMetricsClient', {
-          serverUrl: 'http://www.small-improvements.com',//'http://localhost:8080',
+          serverUrl: serverUrl,
           sourceId: 'SIMetricsClient',
           getEventsPath: 'queryActivitiesJSON',
           getServerTime: 'queryServertimeJSON',
@@ -35,55 +107,16 @@
           useLastKeyOnRequests: false
         });
 
-        // Callback for activity listeners
-        function drawEventOnMap(listener, scheduledTimeout, event) {
-          console.log("Scheduling activity on the map for listener" + listener.name + " in " + scheduledTimeout + " ms");
-
-          window.setTimeout(function() {
-            console.log("Creating event on the map for event " + event.label);
-            smallimap.newEvent({
-              latitude: event.latitude,
-              longitude: event.longitude,
-              color: '#ff00ff',
-              weight: 1,
-              length: 1000
-            });
-          }, scheduledTimeout);
-        }
-
-        function getClientsForMap() {
-          $.getJSON('http://localhost:8080/queryClientsJSON?callback=?', function(data) {
-            console.log("Received clients from SI");
-            console.log(data);
-          });
-        }
-
         // Init map
         smallimap = $('#smallimap').smallimap().data('api');
         smallimap.run();
-
-	  window.setInterval(function() {
-	    var event = new $.si.smallimap.events.BlipEvent(smallimap, {
-              latitude: 50,
-              longitude: 50,
-              color: '#ff00ff',
-              duration: 1000
-            });
-	    event.init();
-	    smallimap.enqueueEvent(event);
-	      
-	  }, 180);
-
-        window.smallimap = smallimap;
+        // window.smallimap = smallimap;
 
         // registerListener: (name, callback, sound='', subject='', category='', action='', label='')
         metricsClient.registerListener('activities', drawEventOnMap, '', 'siactivity');
 
         // Init metrics client
-        metricsClient.init();
-
-        // Start polling events
-        metricsClient.login("dummy", "dummy");
+        metricsClient.init().run();
 
         // Get clients and draw them on the map
         getClientsForMap();

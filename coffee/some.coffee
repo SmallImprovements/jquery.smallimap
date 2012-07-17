@@ -11,6 +11,7 @@
       soundEnabled: true
       useLocalStorage: true
       useLastKeyOnRequests: true
+      requireLogin: false
       animationSpeed: 150
       alertTimeout: 3000
       pollingInterval: 15000
@@ -117,6 +118,16 @@
           @soundEnabled = false
           @feedback 'Your browser does not support our audio player at this time :-('
 
+      @
+
+    run: =>
+      return if @requireLogin and not @loggedIn
+
+      # Start polling the server
+      @pollServer()
+
+      @
+
     setPaused: =>
       log 'Client paused'
       @paused = true
@@ -138,11 +149,14 @@
       @soundEnabled = not @soundEnabled
 
     pollServer: =>
-      return unless @loggedIn
+      return if @requireLogin and not @loggedIn
 
       unless @paused
-        # Get new events from the server
-        @getEvents()
+        # Get new events from the server when the browser has time for it
+        if window.requestAnimationFrame
+          requestAnimationFrame @getEvents
+        else
+          @getEvents()
 
       # Init the next polling event
       @pollingTimeoutId = window.setTimeout @pollServer, @pollingInterval - @clientComputationPollingOffset
@@ -205,8 +219,6 @@
         @feedback 'You are now logged in!'
       else
         @feedback 'Login failed!', 'error'
-
-      @pollServer()
 
       @loggedIn
 
