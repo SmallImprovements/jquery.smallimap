@@ -263,7 +263,7 @@
     constructor: (smallimap, options) ->
       super smallimap, options
       @color = new Color(options.color or "#336699")
-      @duration = options.duration or 1024
+      @duration = options.duration or 2048
       @weight = options.weight || 0.5
 
     initEventsForDot: (nx, ny, d, dot) =>
@@ -273,7 +273,7 @@
       fadeOutDuration = @duration*8/9 * (1 - ratio)
       startColor = dot.initial.color
       startRadius = dot.initial.radius
-      endColor = new Color(@color.rgbString()).mix(startColor, ratio)
+      endColor = new Color(@color.rgbString()).mix(startColor, ratio*ratio)
       endRadius = (@smallimap.dotRadius - startRadius)*(1 - ratio) + startRadius
       if fadeInDuration > 0
         @enqueue new DelayEffect(dot, delay,

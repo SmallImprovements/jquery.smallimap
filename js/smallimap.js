@@ -444,7 +444,7 @@
         this.initEventsForDot = __bind(this.initEventsForDot, this);
         BlipEvent.__super__.constructor.call(this, smallimap, options);
         this.color = new Color(options.color || "#336699");
-        this.duration = options.duration || 1024;
+        this.duration = options.duration || 2048;
         this.weight = options.weight || 0.5;
       }
 
@@ -457,7 +457,7 @@
         fadeOutDuration = this.duration * 8 / 9 * (1 - ratio);
         startColor = dot.initial.color;
         startRadius = dot.initial.radius;
-        endColor = new Color(this.color.rgbString()).mix(startColor, ratio);
+        endColor = new Color(this.color.rgbString()).mix(startColor, ratio * ratio);
         endRadius = (this.smallimap.dotRadius - startRadius) * (1 - ratio) + startRadius;
         if (fadeInDuration > 0) {
           return this.enqueue(new DelayEffect(dot, delay, {
