@@ -42,15 +42,16 @@
           log("Scheduling activity on the map for listener " + listener.name + " in " + scheduledTimeout + " ms");
 
           var eventColor,
-              eventDuration = 500,
-              eventWeight = 1;
+              eventDuration = 3000,
+              eventWeight = 0.9,
+              eventRadius = 6;
 
           switch (event.category) {
             case 'appraisal':
-              eventColor = '#658413'; // Yellow/Green
+              eventColor = '#84d53c'; // Yellow/Green
               break;
             case 'feedback':
-              eventColor = '#849022'; // Light green
+              eventColor = '#03f7f4'; // Turqoise
               break;
             case 'objective':
               eventColor = '#31577e'; // Blue
@@ -70,7 +71,8 @@
               longitude: event.longitude,
               color: eventColor,
               weight: eventWeight,
-              length: eventDuration
+              length: eventDuration,
+              radius: eventRadius
             });
             smallimap.enqueueEvent(newEvent);
 
