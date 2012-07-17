@@ -622,7 +622,7 @@
           });
           _this.mapContainer.append(_this.iconObj);
           return _this.iconObj.smallipop({
-            theme: 'black'
+            theme: 'white'
           });
         });
       };

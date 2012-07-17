@@ -395,7 +395,7 @@
 
         @mapContainer.append @iconObj
         @iconObj.smallipop
-          theme: 'black'
+          theme: 'white'
 
     remove: =>
       @iconObj.remove()

@@ -1,12 +1,43 @@
+
+$map-shadow: 0 1px 7px rgba(0, 0, 0, 0.3);
+$map-background: #fafaf5 60%, #f1f0dd;
+$map-radius: 5px;
+$map-icon-scale: 1.4;
+
 body {
-  background-color: #fefefe;
   color: #333;
   font-family: arial;
+  background-color: #fefefe;
 }
 
 .main {
   width: 1000px;
   margin: 0 auto;
+}
+
+#smallimap {
+  -webkit-box-shadow: $map-shadow;
+     -moz-box-shadow: $map-shadow;
+      -ms-box-shadow: $map-shadow;
+       -o-box-shadow: $map-shadow;
+          box-shadow: $map-shadow;
+
+  -webkit-border-radius: $map-radius;
+     -moz-border-radius: $map-radius;
+      -ms-border-radius: $map-radius;
+       -o-border-radius: $map-radius;
+          border-radius: $map-radius;
+
+  background-image: -webkit-linear-gradient($map-background);
+  background-image:    -moz-linear-gradient($map-background);
+  background-image:     -ms-linear-gradient($map-background);
+  background-image:      -o-linear-gradient($map-background);
+  background-image:         linear-gradient($map-background);
+
+  canvas {
+    margin: 5px;
+    display: block;
+  }
 }
 
 .smallimap-mapicon {
@@ -21,10 +52,14 @@ body {
   &:hover {
     opacity: 1;
 
-    -webkit-transform: scale(1.4);
-       -moz-transform: scale(1.4);
-        -ms-transform: scale(1.4);
-         -o-transform: scale(1.4);
-            transform: scale(1.4);
+    -webkit-transform: scale($map-icon-scale);
+       -moz-transform: scale($map-icon-scale);
+        -ms-transform: scale($map-icon-scale);
+         -o-transform: scale($map-icon-scale);
+            transform: scale($map-icon-scale);
   }
+}
+
+#smallipop .sipContent {
+  text-align: center;
 }

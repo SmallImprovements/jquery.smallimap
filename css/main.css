@@ -1,12 +1,34 @@
 body {
-  background-color: #fefefe;
   color: #333;
   font-family: arial;
+  background-color: #fefefe;
 }
 
 .main {
   width: 1000px;
   margin: 0 auto;
+}
+
+#smallimap {
+  -webkit-box-shadow: 0 1px 7px rgba(0, 0, 0, 0.3);
+  -moz-box-shadow: 0 1px 7px rgba(0, 0, 0, 0.3);
+  -ms-box-shadow: 0 1px 7px rgba(0, 0, 0, 0.3);
+  -o-box-shadow: 0 1px 7px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 7px rgba(0, 0, 0, 0.3);
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  -ms-border-radius: 5px;
+  -o-border-radius: 5px;
+  border-radius: 5px;
+  background-image: -webkit-linear-gradient(#fafaf5 60%, #f1f0dd);
+  background-image: -moz-linear-gradient(#fafaf5 60%, #f1f0dd);
+  background-image: -ms-linear-gradient(#fafaf5 60%, #f1f0dd);
+  background-image: -o-linear-gradient(#fafaf5 60%, #f1f0dd);
+  background-image: linear-gradient(#fafaf5 60%, #f1f0dd);
+}
+#smallimap canvas {
+  margin: 5px;
+  display: block;
 }
 
 .smallimap-mapicon {
@@ -24,4 +46,8 @@ body {
   -ms-transform: scale(1.4);
   -o-transform: scale(1.4);
   transform: scale(1.4);
+}
+
+#smallipop .sipContent {
+  text-align: center;
 }

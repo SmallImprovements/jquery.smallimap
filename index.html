@@ -10,6 +10,7 @@
   <body>
     <div class="main">
       <h1>Smallimap Demo</h1>
+      <button onclick="runSmallimapTest();">Start test</button>
       <div id="smallimap"></div>
     </div>
 
@@ -102,7 +103,7 @@
 	      py = event.pageY - $(this).offset().top,
 	      x = pxToX(px),
 	      y = pyToY(py);
-	    
+
 	    if(x != lastX || y != lastY) {
 	      var inEvent = new $.si.smallimap.events.LensEvent(smallimap, {
 		  longitude: smallimap.xToLong(x),
@@ -153,7 +154,11 @@
         });
 
         // Init map
-        smallimap = $('#smallimap').smallimap().data('api');
+        smallimap = $('#smallimap').smallimap({
+          dotRadius: 3,
+          width: 990,
+          height: 495
+        }).data('api');
         smallimap.run();
         // window.smallimap = smallimap;
 
