@@ -4,8 +4,12 @@
   $.si.smallimap =
     version: '0.1'
     defaults:
+      dotRadius: 4
+      fps: 20
+      width: 1000
+      height: 500
       colors:
-        lights: ["#fdf6e3", "#eee8d5", "#b8b0aa", "#93a1a1", "#839496"]
+        lights: ["#fdf6e3", "#fafafa", "#dddddd", "#93a1a1", "#839496"]
         darks: ["#002b36", "#073642", "#586e75", "#657b83"]
         land:
           day: (smallimap) ->
@@ -16,7 +20,8 @@
   class Smallimap
 
     constructor: (@obj, cwidth, cheight, @renderContext, @world, options={}) ->
-      @dotRadius = 3.2
+      $.extend true, @, options
+
       @dotDiameter = @dotRadius * 2
       @width = cwidth / @dotDiameter
       @height = cheight / @dotDiameter
@@ -25,9 +30,7 @@
       @dirtyXs = undefined
       @eventQueue = []
       @lastRefresh = 0
-      @fps = 20
-
-      $.extend true, @, $.si.smallimap.defaults, options
+      @mapIcons = []
 
       @grid = @generateGrid @width, @height
 
@@ -39,11 +42,13 @@
       dt = now - @lastRefresh
       @lastRefresh = now
 
+      # Refresh event queue
       ongoingEvents = []
       for event in @eventQueue when event.refresh dt
         ongoingEvents.push event
       @eventQueue = ongoingEvents
 
+      # Render dirty dots
       unless @dirtyXs
         @dirtyXs = []
         @dirtyXs[x] = true for x in [0..@width - 1]
@@ -196,7 +201,13 @@
       @eventQueue.push(event)
 
     addMapIcon: (title, label, iconUrl, longitude, latitude) =>
-      @mapIcons.push new MapIcon(title, label, iconUrl, @longToX, @latToY)
+      longitude = parseFloat longitude
+      latitude = parseFloat latitude
+
+      mapX = @longToX(longitude) * @dotDiameter + @dotRadius
+      mapY = @latToY(latitude) * @dotDiameter + @dotRadius
+
+      @mapIcons.push new MapIcon(@obj, title, label, iconUrl, mapX, mapY)
 
   class Effect
 
@@ -351,7 +362,9 @@
       )
 
   class MapIcon
-    constructor: (mapContainer, @title, @label, @iconUrl, @x, @y) ->
+    constructor: (@mapContainer, @title, @label, @iconUrl, @x, @y) ->
+      @initialOpacity = 0.7
+      @zoom = 1.5
       @init()
 
     init: =>
@@ -364,13 +377,48 @@
           </div>
         </div>
       """
+      @iconObj = $ iconHtml
 
-      @iconObj = $(iconHtml).css
-        left: @x
-        top: @y
+      @iconObjImage = @iconObj.find 'img'
+      @iconObjImage.load =>
+        @width = @iconObjImage.get(0).width or 24
+        @height = @iconObjImage.get(0).height or 24
 
-      mapContainer.append @iconObj
-      @iconObj.smallipop()
+        @iconObjImage.attr
+          width: @width
+          height: @height
+        .css
+          width: '100%'
+          height: '100%'
+
+        @iconObj.css
+          position: 'absolute'
+          left: @x - @width / 2
+          top: @y - @height / 2
+          opacity: 0
+        .bind 'mouseover mouseout', @onHover
+
+        @mapContainer.append @iconObj
+        @iconObj.fadeTo(200, @initialOpacity).smallipop
+          theme: 'black'
+
+    onHover: (e) =>
+      if e.type is 'mouseover'
+        @iconObj.stop().animate
+            opacity: 1
+            left: @x - (@width * @zoom) / 2
+            top: @y - (@height * @zoom) / 2
+            width: @width * @zoom
+            height: @height * @zoom
+          ,100
+      else
+        @iconObj.stop().animate
+            opacity: @initialOpacity
+            left: @x - @width / 2
+            top: @y - @height / 2
+            width: @width
+            height: @height
+          ,200
 
     remove: =>
       @iconObj.remove()
@@ -403,8 +451,19 @@
 
     return @.each ->
       # Initialize each trigger, create id and bind events
-      self = $(@)
-      canvas = @
+      self = $(@).css
+        position: 'relative'
+
+      canvasObj = $ '<canvas>'
+      canvasObj.attr
+        width: options.width
+        height: options.height
+
+      # Append canvas to dom
+      self.append canvasObj
+
+      # Get render context from canvas
+      canvas = canvasObj.get 0
       ctx = canvas.getContext '2d'
       smallimap = new Smallimap(self, canvas.width, canvas.height, ctx, smallimapWorld, options)
 

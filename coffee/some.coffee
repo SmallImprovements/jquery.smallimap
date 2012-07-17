@@ -50,6 +50,7 @@
       @password = undefined
       @serverTimedelta = 0
       @paused = false
+      @soundFormat = 'mp3'
 
       $.extend true, @, $.some.defaults, options
 
@@ -109,9 +110,7 @@
       if @soundEnabled
         if Modernizr?.audio?.ogg?
           log 'Ogg support for this browser is enabled'
-          for sound, src of sounds
-            sounds[sound] = src.replace /mp3/g, 'ogg'
-          log sounds
+          @soundFormat = 'ogg'
         else if Modernizr?.audio?.mp3?
           log 'Mp3 support for this browser is enabled'
         else
@@ -187,14 +186,14 @@
           $("#listener-#{listener.id}").animateHighlight @highlightColor
         , scheduledTimeout
 
-    play: (soundId) =>
-      return unless @soundEnabled
+    play: (sound) =>
+      return unless @soundEnabled or sound[@soundFormat]
 
-      log "Playing sound #{getUrlForClient() + sounds[soundId]}"
+      log "Playing sound #{@getUrlForClient() + sound[@soundFormat]}"
 
       # TODO: Recycle finished audio objects: $(music).bind("ended", function(){ ... });
       audio = new Audio()
-      audio.src = @getUrlForClient() + sounds[soundId]
+      audio.src = @getUrlForClient() + sound[@soundFormat]
       audio.play()
 
       $(audio).bind 'ended', ->
@@ -264,42 +263,47 @@
     getEventsForListener: (listener) =>
       log "Requesting events for listener #{listener.name}"
 
-      $.getJSON @getUrlForPath(@getEventsPath, true),
-          username: @username
-          password: @password
-          subject: listener.subject
-          category: listener.category
-          action: listener.action
-          label: listener.label
-          lastkey: if @useLastKeyOnRequests then listener.lastkey else ''
-          start: @getCurrentTime() - @pollingInterval - @serverTimedelta
-        , (data) =>
-          return unless data
+      requestData =
+        subject: listener.subject
+        category: listener.category
+        action: listener.action
+        label: listener.label
+        start: @getCurrentTime() - @pollingInterval - @serverTimedelta
 
-          lastEventTimestamp = 0
-          timeoutOffset = @serverTimedelta + @pollingInterval - @getCurrentTime()
+      if @requireLogin
+        requestData.username = @username
+        requestData.password = @password
 
-          for event in data
-            log "Received event #{event.key} for listener #{listener.name}"
+      if @useLastKeyOnRequests
+        requestData.lastkey = listener.lastkey
 
-            # Store last received key
-            listener.lastkey = event.key
+      $.getJSON @getUrlForPath(@getEventsPath, true), requestData, (data) =>
+        return unless data
 
-            # Fire the listener at the correct time
-            if Math.abs(event.when - lastEventTimestamp) > @minEventSchedulingDistance
-              lastEventTimestamp = event.when
+        lastEventTimestamp = 0
+        timeoutOffset = @serverTimedelta + @pollingInterval - @getCurrentTime()
 
-              # Compute the new time delta the listeners callback should be fired
-              scheduledTimeout = event.when + timeoutOffset
+        for event in data
+          log "Received event #{event.key} for listener #{listener.name}"
 
-              # Drop events in the past
-              if scheduledTimeout > 0
-                log "Scheduling event #{event.key} for listener #{listener.name}"
-                listener.callback listener, scheduledTimeout, event
-              else
-                log "Dropped event #{event.key} from the past at delta #{scheduledTimeout}"
+          # Store last received key
+          listener.lastkey = event.key
+
+          # Fire the listener at the correct time
+          if Math.abs(event.when - lastEventTimestamp) > @minEventSchedulingDistance
+            lastEventTimestamp = event.when
+
+            # Compute the new time delta the listeners callback should be fired
+            scheduledTimeout = event.when + timeoutOffset
+
+            # Drop events in the past
+            if scheduledTimeout > 0
+              log "Scheduling event #{event.key} for listener #{listener.name}"
+              listener.callback listener, scheduledTimeout, event
             else
-              log "Dropped event #{event.key} which repeated to fast"
+              log "Dropped event #{event.key} from the past at delta #{scheduledTimeout}"
+          else
+            log "Dropped event #{event.key} which repeated to fast"
 
     getEvents: =>
       @getEventsForListener listener for listener in @listeners

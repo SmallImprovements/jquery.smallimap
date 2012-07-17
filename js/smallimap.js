@@ -10,8 +10,12 @@
     $.si.smallimap = {
       version: '0.1',
       defaults: {
+        dotRadius: 4,
+        fps: 20,
+        width: 1000,
+        height: 500,
         colors: {
-          lights: ["#fdf6e3", "#eee8d5", "#b8b0aa", "#93a1a1", "#839496"],
+          lights: ["#fdf6e3", "#fafafa", "#dddddd", "#93a1a1", "#839496"],
           darks: ["#002b36", "#073642", "#586e75", "#657b83"],
           land: {
             day: function(smallimap) {
@@ -65,7 +69,7 @@
 
         this.run = __bind(this.run, this);
 
-        this.dotRadius = 3.2;
+        $.extend(true, this, options);
         this.dotDiameter = this.dotRadius * 2;
         this.width = cwidth / this.dotDiameter;
         this.height = cheight / this.dotDiameter;
@@ -74,8 +78,7 @@
         this.dirtyXs = void 0;
         this.eventQueue = [];
         this.lastRefresh = 0;
-        this.fps = 20;
-        $.extend(true, this, $.si.smallimap.defaults, options);
+        this.mapIcons = [];
         this.grid = this.generateGrid(this.width, this.height);
       }
 
@@ -295,7 +298,12 @@
       };
 
       Smallimap.prototype.addMapIcon = function(title, label, iconUrl, longitude, latitude) {
-        return this.mapIcons.push(new MapIcon(title, label, iconUrl, this.longToX, this.latToY));
+        var mapX, mapY;
+        longitude = parseFloat(longitude);
+        latitude = parseFloat(latitude);
+        mapX = this.longToX(longitude) * this.dotDiameter + this.dotRadius;
+        mapY = this.latToY(latitude) * this.dotDiameter + this.dotRadius;
+        return this.mapIcons.push(new MapIcon(this.obj, title, label, iconUrl, mapX, mapY));
       };
 
       return Smallimap;
@@ -579,6 +587,7 @@
     MapIcon = (function() {
 
       function MapIcon(mapContainer, title, label, iconUrl, x, y) {
+        this.mapContainer = mapContainer;
         this.title = title;
         this.label = label;
         this.iconUrl = iconUrl;
@@ -586,20 +595,62 @@
         this.y = y;
         this.remove = __bind(this.remove, this);
 
+        this.onHover = __bind(this.onHover, this);
+
         this.init = __bind(this.init, this);
 
+        this.initialOpacity = 0.7;
+        this.zoom = 1.5;
         this.init();
       }
 
       MapIcon.prototype.init = function() {
-        var iconHtml;
+        var iconHtml,
+          _this = this;
         iconHtml = "<div class=\"smallipop\">\n  <img src=\"" + this.iconUrl + "\" alt=\"" + this.title + "\"/>\n  <div class=\"smallipopHint\">\n    <b class=\"smallimap-icon-title\">" + this.title + "</b><br/>\n    <p class=\"smallimap-icon-label\">" + this.label + "</p>\n  </div>\n</div>";
-        this.iconObj = $(iconHtml).css({
-          left: this.x,
-          top: this.y
+        this.iconObj = $(iconHtml);
+        this.iconObjImage = this.iconObj.find('img');
+        return this.iconObjImage.load(function() {
+          _this.width = _this.iconObjImage.get(0).width || 24;
+          _this.height = _this.iconObjImage.get(0).height || 24;
+          _this.iconObjImage.attr({
+            width: _this.width,
+            height: _this.height
+          }).css({
+            width: '100%',
+            height: '100%'
+          });
+          _this.iconObj.css({
+            position: 'absolute',
+            left: _this.x - _this.width / 2,
+            top: _this.y - _this.height / 2,
+            opacity: 0
+          }).bind('mouseover mouseout', _this.onHover);
+          _this.mapContainer.append(_this.iconObj);
+          return _this.iconObj.fadeTo(200, _this.initialOpacity).smallipop({
+            theme: 'black'
+          });
         });
-        mapContainer.append(this.iconObj);
-        return this.iconObj.smallipop();
+      };
+
+      MapIcon.prototype.onHover = function(e) {
+        if (e.type === 'mouseover') {
+          return this.iconObj.stop().animate({
+            opacity: 1,
+            left: this.x - (this.width * this.zoom) / 2,
+            top: this.y - (this.height * this.zoom) / 2,
+            width: this.width * this.zoom,
+            height: this.height * this.zoom
+          }, 100);
+        } else {
+          return this.iconObj.stop().animate({
+            opacity: this.initialOpacity,
+            left: this.x - this.width / 2,
+            top: this.y - this.height / 2,
+            width: this.width,
+            height: this.height
+          }, 200);
+        }
       };
 
       MapIcon.prototype.remove = function() {
@@ -642,9 +693,17 @@
       }
       options = $.extend({}, $.si.smallimap.defaults, options);
       return this.each(function() {
-        var canvas, ctx, self, smallimap;
-        self = $(this);
-        canvas = this;
+        var canvas, canvasObj, ctx, self, smallimap;
+        self = $(this).css({
+          position: 'relative'
+        });
+        canvasObj = $('<canvas>');
+        canvasObj.attr({
+          width: options.width,
+          height: options.height
+        });
+        self.append(canvasObj);
+        canvas = canvasObj.get(0);
         ctx = canvas.getContext('2d');
         smallimap = new Smallimap(self, canvas.width, canvas.height, ctx, smallimapWorld, options);
         return self.data('api', smallimap);
