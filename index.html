@@ -7,6 +7,7 @@
   </head>
   <body>
     <h1>Smallimap Demo</h1>
+    <button onclick="runSmallimapTest();">Start test</button>
     <div>
       <canvas id="smallimap" width="1200" height="600"></canvas>
     </div>
@@ -83,14 +84,47 @@
         // Test function for the map which creates random events all over the world
         var testIntervalId = -1;
         window.runSmallimapTest = function() {
+	  var lastX = 0, lastY = 0,
+	    pxToX = function (px) { return Math.floor(px/smallimap.dotDiameter); },
+	    pyToY = function (py) { return Math.floor(py/smallimap.dotDiameter); };
+
+	  $('#smallimap').mousemove(function (event) {
+	    var px = event.pageX - $(this).offset().left,// - smallimap.width,
+	      py = event.pageY - $(this).offset().top,
+	      x = pxToX(px),
+	      y = pyToY(py);
+	    
+	    if(x != lastX || y != lastY) {
+	      var inEvent = new $.si.smallimap.events.LensEvent(smallimap, {
+		  longitude: smallimap.xToLong(x),
+		  latitude: smallimap.yToLat(y),
+		  eventRadius: 0,
+		  duration: 128,
+		  fade: "in"
+	      });
+	      smallimap.enqueueEvent(inEvent);
+	      var outEvent = new $.si.smallimap.events.LensEvent(smallimap, {
+		  longitude: smallimap.xToLong(lastX),
+		  latitude: smallimap.yToLat(lastY),
+		  eventRadius: 0,
+		  delay: 128,
+		  duration: 256,
+		  fade: "out"
+	      });
+	      smallimap.enqueueEvent(outEvent);
+              lastX = x
+              lastY = y
+	    }
+	  });
+
           testIntervalId = setInterval(function() {
             var event = new $.si.smallimap.events.BlipEvent(smallimap, {
               latitude: Math.random() * 180 - 90,
               longitude: Math.random() * 360 - 180,
-              color: '#ff00ff',
-              duration: 1024
+              color: '#dc322f', // '#859900',
+	      duration: 512
             });
-            smallimap.enqueueEvent(event);
+            //smallimap.enqueueEvent(event);
           }, 500);
         };
         window.stopSmallimapTest = function() {

@@ -114,19 +114,19 @@
       Math.floor(y * @world[0].length / @height)
 
     landinessOf: (x, y) =>
-        worldXStart = @convertToWorldX x
-        worldXEnd = @convertToWorldX(x + 1) - 1
-        worldYStart = @convertToWorldY y
-        worldYEnd = @convertToWorldY(y + 1) - 1
-        totalCount = 0
-        existsCount = 0
+      worldXStart = @convertToWorldX x
+      worldXEnd = @convertToWorldX(x + 1) - 1
+      worldYStart = @convertToWorldY y
+      worldYEnd = @convertToWorldY(y + 1) - 1
+      totalCount = 0
+      existsCount = 0
 
-        for i in [worldXStart..worldXEnd]
-          for j in [worldYStart..worldYEnd]
-            totalCount += 1
-            existsCount += 1 if @world[i] and @world[i][j]
+      for i in [worldXStart..worldXEnd]
+        for j in [worldYStart..worldYEnd]
+          totalCount += 1
+          existsCount += 1 if @world[i] and @world[i][j]
 
-        return existsCount / totalCount
+      return existsCount / totalCount
 
     render: (x, y, millis) =>
       dot = @grid[x][y]
@@ -155,9 +155,9 @@
       target = @grid[x][y].target
 
       if target.radius
-          target.radius = (target.radius + r) / 2
+        target.radius = (target.radius + r) / 2
       else
-          target.radius = r
+        target.radius = r
 
       @markDirty x, y
 
@@ -165,7 +165,7 @@
       target = @grid[x][y].target
 
       if target.color
-          target.color = target.color.mix color
+        target.color = target.color.mix color
       else
         target.color = color
 
@@ -191,28 +191,6 @@
 
         push(0, 0.5) for y in [0..@height - 1]
 
-
-    newMouseHover: (px, py) =>
-      x = Math.floor(px / @dotDiameter)
-      y = Math.floor(py / @dotDiameter)
-      radius = 2
-      pushDown = (x, y, initial, target) ->
-        true
-        # eventQueue.push(pub.events.changeRadius(x, y, initial, target, 128, function () {}))
-
-      # Check we're not out of bounds
-      if @grid[x] and @grid[x][y]
-        if @lastX isnt x and @lastY isnt y
-          dot = @grid[x][y]
-          for i in [-radius..radius]
-              for j in [-radius..radius]
-                d = Math.sqrt(i * i + j * j)
-                if d < radius
-                  pushDown(x + i, y + j, dot.initial.radius, 2)
-
-          lastX = x
-          lastY = y
-
     enqueueEvent: (event) =>
       event.init()
       @eventQueue.push(event)
@@ -220,16 +198,12 @@
     addMapIcon: (title, label, iconUrl, longitude, latitude) =>
       @mapIcons.push new MapIcon(title, label, iconUrl, @longToX, @latToY)
 
-
   class Effect
 
     constructor: (@dot, @duration, options) ->
       @timeElapsed = 0
-      @easing = options.easing || @linearEasing
+      @easing = options.easing || easing.linear
       @callback = options.callback
-
-    linearEasing: (progress) ->
-      progress
 
     update: (dt) =>
       @timeElapsed += dt
@@ -270,7 +244,8 @@
       "nothing to do"
 
   class Event
-    constructor: (@smallimap, @callback) ->
+    constructor: (@smallimap, options) ->
+      @callback = options.callback
       @queue = []
 
     enqueue: (effect) =>
@@ -287,49 +262,93 @@
           @queue.push effect
       @queue.length > 0
 
-  class BlipEvent extends Event
+  class GeoEvent extends Event
     constructor: (smallimap, options) ->
-      super smallimap, options.callback
+      super smallimap, options
       @latitude = options.latitude
       @longitude = options.longitude
-      @color = new Color(options.color or "#336699")
+      @x = @smallimap.longToX @longitude
+      @y = @smallimap.latToY @latitude
+
+  class GeoAreaEvent extends GeoEvent
+    constructor: (smallimap, options) ->
+      super smallimap, options
       @eventRadius = options.eventRadius || 8
-      @duration = options.duration or 1024
-      #@weight = options.weight || 0.5
 
     init: () =>
-      x = @smallimap.longToX @longitude
-      y = @smallimap.latToY @latitude
-
       for i in [-@eventRadius..@eventRadius]
         for j in [-@eventRadius..@eventRadius]
-          nx = x + i
-          ny = y + j
+          nx = @x + i
+          ny = @y + j
           d = Math.sqrt(i * i + j * j)
           if d < @eventRadius and @smallimap.grid[nx] and @smallimap.grid[nx][ny]
             dot = @smallimap.grid[nx][ny]
             @initEventsForDot nx, ny, d, dot
+
+  class BlipEvent extends GeoAreaEvent
+    constructor: (smallimap, options) ->
+      super smallimap, options
+      @color = new Color(options.color or "#336699")
+      @duration = options.duration or 1024
+      @weight = options.weight || 1
 
     initEventsForDot: (nx, ny, d, dot) =>
       delay = @duration * d/@eventRadius
       duration = @duration - delay
       startColor = dot.initial.color
       startRadius = dot.initial.radius
-      endColor = new Color(@color.rgbString())
-      endRadius = (@smallimap.dotRadius - startRadius) / (d+1) + startRadius
+      endColor = new Color(@color.rgbString()).mix(startColor, d/@eventRadius*@weight)
+      endRadius = (@smallimap.dotRadius - startRadius)*@weight/(d+1) + startRadius
       if duration > 0
-        @enqueue new ColorEffect(dot, duration,
-          startColor: startColor
-          endColor: endColor
+        @enqueue new DelayEffect(dot, delay,
           callback: =>
-            @enqueue new ColorEffect(dot, duration, { startColor: endColor, endColor: startColor })
+            @enqueue new ColorEffect(dot, duration,
+              startColor: startColor
+              endColor: endColor
+              easing: easing.cubic
+              callback: =>
+                @enqueue new ColorEffect(dot, duration*8,
+                  startColor: endColor
+                  endColor: startColor
+                  easing: easing.inverse easing.cubic
+                )
+            )
         )
-        @enqueue new RadiusEffect(dot, duration,
-          startRadius: startRadius
-          endRadius: endRadius
+        @enqueue new DelayEffect(dot, delay,
           callback: =>
-            @enqueue new RadiusEffect(dot, duration, { startRadius: endRadius, endRadius: startRadius })
+            @enqueue new RadiusEffect(dot, duration,
+              startRadius: startRadius
+              endRadius: endRadius
+              easing: easing.cubic
+              callback: =>
+                @enqueue new RadiusEffect(dot, duration*8, { startRadius: endRadius, endRadius: startRadius })
+            )
         )
+
+  class LensEvent extends GeoEvent
+    constructor: (smallimap, options) ->
+      super smallimap, options
+      @delay = options.delay or 0
+      @duration = options.duration or 1024
+      @weight = options.weight || 1
+      @isOut = options.fade == "out"
+
+    init: () =>
+      dot = @smallimap.grid[@x][@y]
+      duration = @duration
+      startRadius = dot.initial.radius
+      endRadius = (@smallimap.dotRadius - startRadius)*@weight + startRadius
+      if @isOut # swap the radius
+        startRadius = endRadius
+        endRadius = dot.initial.radius
+      @enqueue new DelayEffect(dot, @delay,
+        callback: =>
+          @enqueue new RadiusEffect(dot, @duration,
+            startRadius: startRadius
+            endRadius: endRadius
+            easing: easing.quadratic
+          )
+      )
 
   class MapIcon
     constructor: (mapContainer, @title, @label, @iconUrl, @x, @y) ->
@@ -356,6 +375,17 @@
     remove: =>
       @iconObj.remove()
 
+  easing =
+    linear: (progress) ->
+      progress
+    quadratic: (progress) ->
+      progress*progress
+    cubic: (progress) ->
+      progress*progress*progress
+    inverse: (easing) ->
+      (progress) ->
+        1 - easing(1 - progress)
+
   $.si.smallimap.effects =
     Effect: Effect
     ColorEffect: ColorEffect
@@ -364,6 +394,9 @@
   $.si.smallimap.events =
     Event: Event
     BlipEvent: BlipEvent
+    LensEvent: LensEvent
+
+  $.si.smallimap.easing = easing
 
   $.fn.smallimap = (options={}) ->
     options = $.extend {}, $.si.smallimap.defaults, options
