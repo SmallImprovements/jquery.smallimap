@@ -85,14 +85,13 @@
         window.runSmallimapTest = function() {
           testIntervalId = setInterval(function() {
             var event = new $.si.smallimap.events.BlipEvent(smallimap, {
-              latitude: 50,
-              longitude: 50,
+              latitude: Math.random() * 180 - 90,
+              longitude: Math.random() * 360 - 180,
               color: '#ff00ff',
-              duration: 1000
+              duration: 1024
             });
-            event.init();
             smallimap.enqueueEvent(event);
-          }, 180);
+          }, 500);
         };
         window.stopSmallimapTest = function() {
           clearInterval(testIntervalId);

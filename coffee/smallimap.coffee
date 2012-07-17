@@ -39,10 +39,8 @@
       dt = now - @lastRefresh
       @lastRefresh = now
 
-      #console.log("eventQueue=" + @eventQueue)
       ongoingEvents = []
       for event in @eventQueue when event.refresh dt
-        console.log("info")
         ongoingEvents.push event
       @eventQueue = ongoingEvents
 
@@ -78,6 +76,10 @@
           radius: @dotRadius * 0.64
         target : {}
         dirty: true
+        setRadius: (radius) =>
+          @setRadius x, y, radius
+        setColor: (color) =>
+          @setColor x, y, color
 
       return newDot
 
@@ -100,7 +102,7 @@
       landColors = @colors.land.day(@)
       idx = Math.floor(darkness * (landColors.length - 2))
 
-      if sunSet.isDaylight now.getHours()
+      if sunSet.isDaylight(now.getHours()) or latitude >= 69
         new Color(landColors[idx])
       else
         new Color(landColors[idx + 1])
@@ -212,6 +214,7 @@
           lastY = y
 
     enqueueEvent: (event) =>
+      event.init()
       @eventQueue.push(event)
 
     addMapIcon: (title, label, iconUrl, longitude, latitude) =>
@@ -229,17 +232,13 @@
       progress
 
     update: (dt) =>
-      timeElapsed += dt
-      @refresh @easing(timeElapsed/duration)
-      if timeElapsed > duration
-        console.log("timeElapsed > duration")
+      @timeElapsed += dt
+      @refresh Math.min(1, @easing(@timeElapsed/@duration))
+      if @timeElapsed > @duration
         @callback?()
         false
       else
         true
-
-    withEasing: (easing) =>
-      @easing = easing
 
     refresh: (progress) =>
       "unimplemented"
@@ -247,8 +246,8 @@
   class RadiusEffect extends Effect
     constructor: (dot, duration, options) ->
       super dot, duration, options
-      @startRadius = options.startRadius || 6
-      @endRadius = options.endRadius || 8
+      @startRadius = options.startRadius
+      @endRadius = options.endRadius
 
     refresh: (progress) =>
       @dot.setRadius @endRadius * progress + @startRadius * (1 - progress)
@@ -256,12 +255,12 @@
   class ColorEffect extends Effect
     constructor: (dot, duration, options) ->
       super dot, duration, options
-      @startColor = new Color(options.startColor || "#ff00ff")
-      @endColor = new Color(options.endColor || "#336699")
+      @startColor = options.startColor
+      @endColor = options.endColor
 
     refresh: (progress) =>
       start = new Color(@startColor.rgbString())
-      @dot.setColor = start.mix(@endColor, progress)
+      @dot.setColor start.mix(@endColor, progress)
 
   class DelayEffect extends Effect
     constructor: (dot, duration, options) ->
@@ -275,19 +274,17 @@
       @queue = []
 
     enqueue: (effect) =>
-      console.log("enqueued: " + effect)
       @queue.push effect
 
     init: () =>
       "no init, dude"
 
     refresh: (dt) =>
-      ongoingEffects = []
-      # console.log("effects=" + @queue)
-      for effect in @queue when effect.update dt
-        console.log("effect getting pushed")
-        ongoingEffects.push effect
-      @queue = ongoingEffects
+      currentEffects = @queue.splice(0)
+      @queue = []
+      for effect in currentEffects
+        if effect.update dt
+          @queue.push effect
       @queue.length > 0
 
   class BlipEvent extends Event
@@ -295,41 +292,44 @@
       super smallimap, options.callback
       @latitude = options.latitude
       @longitude = options.longitude
-      @color = new Color(options.color || "#336699")
+      @color = new Color(options.color or "#336699")
       @eventRadius = options.eventRadius || 8
+      @duration = options.duration or 1024
       #@weight = options.weight || 0.5
-      @duration = options.duration || 1024
 
     init: () =>
       x = @smallimap.longToX @longitude
       y = @smallimap.latToY @latitude
 
-      for i in [-@radius..@radius]
-        for j in [-@radius..@radius]
+      for i in [-@eventRadius..@eventRadius]
+        for j in [-@eventRadius..@eventRadius]
           nx = x + i
           ny = y + j
           d = Math.sqrt(i * i + j * j)
-          if @smallimap.grid[nx] and @smallimap.grid[nx][ny]
-            dot = @grid[nx][ny]
-            delay = @duration * d/@radius
-            duration = @duration - delay
-            startColor = dot.initial.color
-            startRadius = dot.initial.radius
-            endColor = new Color(@color.rgbString())
-            endRadius = (@dotRadius - startRadius) / (d + 1) + startRadius
-            if duration > 0
-              @enqueue new ColorEffect(dot, duration,
-                  startColor: startColor
-                  endColor: endColor
-                  callback: =>
-                    @enqueue new ColorEffect(dot, duration, { startColor: endColor, endColor: startColor })
-                )
-              @enqueue new RadiusEffect(dot, duration,
-                  startRadius: startRadius
-                  endRadius: endRadius
-                  callback: =>
-                    @enqueue new RadiusEffect(dot, duration, { startRadius: endRadius, endRadius: startRadius })
-                )
+          if d < @eventRadius and @smallimap.grid[nx] and @smallimap.grid[nx][ny]
+            dot = @smallimap.grid[nx][ny]
+            @initEventsForDot nx, ny, d, dot
+
+    initEventsForDot: (nx, ny, d, dot) =>
+      delay = @duration * d/@eventRadius
+      duration = @duration - delay
+      startColor = dot.initial.color
+      startRadius = dot.initial.radius
+      endColor = new Color(@color.rgbString())
+      endRadius = (@smallimap.dotRadius - startRadius) / (d+1) + startRadius
+      if duration > 0
+        @enqueue new ColorEffect(dot, duration,
+          startColor: startColor
+          endColor: endColor
+          callback: =>
+            @enqueue new ColorEffect(dot, duration, { startColor: endColor, endColor: startColor })
+        )
+        @enqueue new RadiusEffect(dot, duration,
+          startRadius: startRadius
+          endRadius: endRadius
+          callback: =>
+            @enqueue new RadiusEffect(dot, duration, { startRadius: endRadius, endRadius: startRadius })
+        )
 
   class MapIcon
     constructor: (mapContainer, @title, @label, @iconUrl, @x, @y) ->
