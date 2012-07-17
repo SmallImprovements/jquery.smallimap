@@ -420,7 +420,7 @@
               nx = this.x + i;
               ny = this.y + j;
               d = Math.sqrt(i * i + j * j);
-              if (d < this.eventRadius && this.smallimap.grid[nx] && this.smallimap.grid[nx][ny]) {
+              if (d <= this.eventRadius && this.smallimap.grid[nx] && this.smallimap.grid[nx][ny]) {
                 dot = this.smallimap.grid[nx][ny];
                 _results1.push(this.initEventsForDot(nx, ny, d, dot));
               } else {

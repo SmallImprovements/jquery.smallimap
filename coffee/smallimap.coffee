@@ -255,7 +255,7 @@
           nx = @x + i
           ny = @y + j
           d = Math.sqrt(i * i + j * j)
-          if d < @eventRadius and @smallimap.grid[nx] and @smallimap.grid[nx][ny]
+          if d <= @eventRadius and @smallimap.grid[nx] and @smallimap.grid[nx][ny]
             dot = @smallimap.grid[nx][ny]
             @initEventsForDot nx, ny, d, dot
 
