@@ -231,11 +231,11 @@
 
     update: (dt) =>
       @timeElapsed += dt
+      @refresh Math.min(1, @easing(@timeElapsed/@duration))
       if @timeElapsed > @duration
         @callback?()
         false
       else
-        @refresh @easing(@timeElapsed/@duration)
         true
 
     refresh: (progress) =>
@@ -253,12 +253,12 @@
   class ColorEffect extends Effect
     constructor: (dot, duration, options) ->
       super dot, duration, options
-      @startColor = new Color(options.startColor || "#ff00ff")
-      @endColor = new Color(options.endColor || "#336699")
+      @startColor = options.startColor
+      @endColor = options.endColor
 
     refresh: (progress) =>
       start = new Color(@startColor.rgbString())
-      @dot.setColor = start.mix(@endColor, progress)
+      @dot.setColor start.mix(@endColor, progress)
 
   class DelayEffect extends Effect
     constructor: (dot, duration, options) ->
@@ -279,11 +279,13 @@
       "no init, dude"
 
     refresh: (dt) =>
-      ongoingEffects = []
+      #ongoingEffects = []
+      currentEffects = @queue.splice(0)
+      @queue = []
       # console.log("effects=" + @queue)
-      for effect in @queue when effect.update dt
-        ongoingEffects.push effect
-      @queue = ongoingEffects
+      for effect in currentEffects
+        if effect.update dt
+          @queue.push effect
       @queue.length > 0
 
   class BlipEvent extends Event
@@ -291,13 +293,12 @@
       super smallimap, options.callback
       @latitude = options.latitude
       @longitude = options.longitude
-      @color = new Color(options.color || "#336699")
+      @color = new Color(options.color or "#336699")
       @eventRadius = options.eventRadius || 8
-      @duration = options.duration || 1024
+      @duration = options.duration or 1024
       #@weight = options.weight || 0.5
 
     init: () =>
-      console.log("wtf")
       x = @smallimap.longToX @longitude
       y = @smallimap.latToY @latitude
 
@@ -306,28 +307,30 @@
           nx = x + i
           ny = y + j
           d = Math.sqrt(i * i + j * j)
-          if @smallimap.grid[nx] and @smallimap.grid[nx][ny]
+          if d < @eventRadius and @smallimap.grid[nx] and @smallimap.grid[nx][ny]
             dot = @smallimap.grid[nx][ny]
-            delay = @duration * d/@eventRadius
-            duration = @duration - delay
-            startColor = dot.initial.color
-            startRadius = dot.initial.radius
-            endColor = new Color(@color.rgbString())
-            endRadius = @smallimap.dotRadius
-            if duration > 0
-              "wtf"
-              #@enqueue new ColorEffect(dot, duration,
-              #   startColor: startColor
-              #   endColor: endColor
-              #   callback: =>
-                    #@enqueue new ColorEffect(dot, duration, { startColor: endColor, endColor: startColor })
-              # )
-              #@enqueue new RadiusEffect(dot, duration,
-              #   startRadius: startRadius
-              #   endRadius: endRadius
-              #   callback: =>
-              #     #@enqueue new RadiusEffect(dot, duration, { startRadius: endRadius, endRadius: startRadius })
-              # )
+            @initEventsForDot nx, ny, d, dot
+
+    initEventsForDot: (nx, ny, d, dot) =>
+      delay = @duration * d/@eventRadius
+      duration = @duration - delay
+      startColor = dot.initial.color
+      startRadius = dot.initial.radius
+      endColor = new Color(@color.rgbString())
+      endRadius = (@smallimap.dotRadius - startRadius) / (d+1) + startRadius
+      if duration > 0
+        @enqueue new ColorEffect(dot, duration,
+          startColor: startColor
+          endColor: endColor
+          callback: =>
+            @enqueue new ColorEffect(dot, duration, { startColor: endColor, endColor: startColor })
+        )
+        @enqueue new RadiusEffect(dot, duration,
+          startRadius: startRadius
+          endRadius: endRadius
+          callback: =>
+            @enqueue new RadiusEffect(dot, duration, { startRadius: endRadius, endRadius: startRadius })
+        )
 
   $.si.smallimap.effects =
     Effect: Effect

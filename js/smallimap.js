@@ -341,13 +341,13 @@
 
       Effect.prototype.update = function(dt) {
         this.timeElapsed += dt;
+        this.refresh(Math.min(1, this.easing(this.timeElapsed / this.duration)));
         if (this.timeElapsed > this.duration) {
           if (typeof this.callback === "function") {
             this.callback();
           }
           return false;
         } else {
-          this.refresh(this.easing(this.timeElapsed / this.duration));
           return true;
         }
       };
@@ -384,14 +384,14 @@
       function ColorEffect(dot, duration, options) {
         this.refresh = __bind(this.refresh, this);
         ColorEffect.__super__.constructor.call(this, dot, duration, options);
-        this.startColor = new Color(options.startColor || "#ff00ff");
-        this.endColor = new Color(options.endColor || "#336699");
+        this.startColor = options.startColor;
+        this.endColor = options.endColor;
       }
 
       ColorEffect.prototype.refresh = function(progress) {
         var start;
         start = new Color(this.startColor.rgbString());
-        return this.dot.setColor = start.mix(this.endColor, progress);
+        return this.dot.setColor(start.mix(this.endColor, progress));
       };
 
       return ColorEffect;
@@ -437,16 +437,15 @@
       };
 
       Event.prototype.refresh = function(dt) {
-        var effect, ongoingEffects, _i, _len, _ref;
-        ongoingEffects = [];
-        _ref = this.queue;
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          effect = _ref[_i];
+        var currentEffects, effect, _i, _len;
+        currentEffects = this.queue.splice(0);
+        this.queue = [];
+        for (_i = 0, _len = currentEffects.length; _i < _len; _i++) {
+          effect = currentEffects[_i];
           if (effect.update(dt)) {
-            ongoingEffects.push(effect);
+            this.queue.push(effect);
           }
         }
-        this.queue = ongoingEffects;
         return this.queue.length > 0;
       };
 
@@ -458,6 +457,8 @@
       __extends(BlipEvent, _super);
 
       function BlipEvent(smallimap, options) {
+        this.initEventsForDot = __bind(this.initEventsForDot, this);
+
         this.init = __bind(this.init, this);
         BlipEvent.__super__.constructor.call(this, smallimap, options.callback);
         this.latitude = options.latitude;
@@ -468,8 +469,7 @@
       }
 
       BlipEvent.prototype.init = function() {
-        var d, delay, dot, duration, endColor, endRadius, i, j, nx, ny, startColor, startRadius, x, y, _i, _ref, _ref1, _results;
-        console.log("wtf");
+        var d, dot, i, j, nx, ny, x, y, _i, _ref, _ref1, _results;
         x = this.smallimap.longToX(this.longitude);
         y = this.smallimap.latToY(this.latitude);
         _results = [];
@@ -481,19 +481,9 @@
               nx = x + i;
               ny = y + j;
               d = Math.sqrt(i * i + j * j);
-              if (this.smallimap.grid[nx] && this.smallimap.grid[nx][ny]) {
+              if (d < this.eventRadius && this.smallimap.grid[nx] && this.smallimap.grid[nx][ny]) {
                 dot = this.smallimap.grid[nx][ny];
-                delay = this.duration * d / this.eventRadius;
-                duration = this.duration - delay;
-                startColor = dot.initial.color;
-                startRadius = dot.initial.radius;
-                endColor = new Color(this.color.rgbString());
-                endRadius = this.smallimap.dotRadius;
-                if (duration > 0) {
-                  _results1.push("wtf");
-                } else {
-                  _results1.push(void 0);
-                }
+                _results1.push(this.initEventsForDot(nx, ny, d, dot));
               } else {
                 _results1.push(void 0);
               }
@@ -502,6 +492,39 @@
           }).call(this));
         }
         return _results;
+      };
+
+      BlipEvent.prototype.initEventsForDot = function(nx, ny, d, dot) {
+        var delay, duration, endColor, endRadius, startColor, startRadius,
+          _this = this;
+        delay = this.duration * d / this.eventRadius;
+        duration = this.duration - delay;
+        startColor = dot.initial.color;
+        startRadius = dot.initial.radius;
+        endColor = new Color(this.color.rgbString());
+        endRadius = (this.smallimap.dotRadius - startRadius) / (d + 1) + startRadius;
+        if (duration > 0) {
+          this.enqueue(new ColorEffect(dot, duration, {
+            startColor: startColor,
+            endColor: endColor,
+            callback: function() {
+              return _this.enqueue(new ColorEffect(dot, duration, {
+                startColor: endColor,
+                endColor: startColor
+              }));
+            }
+          }));
+          return this.enqueue(new RadiusEffect(dot, duration, {
+            startRadius: startRadius,
+            endRadius: endRadius,
+            callback: function() {
+              return _this.enqueue(new RadiusEffect(dot, duration, {
+                startRadius: endRadius,
+                endRadius: startRadius
+              }));
+            }
+          }));
+        }
       };
 
       return BlipEvent;
