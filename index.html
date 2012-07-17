@@ -43,7 +43,7 @@
 
           var eventColor,
               eventDuration = 500,
-              eventWeight = 1;
+              eventWeight = 0.5;
 
           switch (event.category) {
             case 'appraisal':
@@ -137,7 +137,7 @@
                 weight: 0.5
             });
             smallimap.enqueueEvent(event);
-          }, 128);
+          }, 512);
         };
         window.stopSmallimapTest = function() {
           clearInterval(testIntervalId);
