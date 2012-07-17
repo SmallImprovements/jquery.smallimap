@@ -1,0 +1,10 @@
+body {
+  background-color: #fefefe;
+  color: #333;
+  font-family: arial;
+}
+
+.main {
+  width: 1000px;
+  margin: 0 auto;
+}

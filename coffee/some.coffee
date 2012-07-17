@@ -50,6 +50,7 @@
       @password = undefined
       @serverTimedelta = 0
       @paused = false
+      @soundFormat = 'mp3'
 
       $.extend true, @, $.some.defaults, options
 
@@ -109,9 +110,7 @@
       if @soundEnabled
         if Modernizr?.audio?.ogg?
           log 'Ogg support for this browser is enabled'
-          for sound, src of sounds
-            sounds[sound] = src.replace /mp3/g, 'ogg'
-          log sounds
+          @soundFormat = 'ogg'
         else if Modernizr?.audio?.mp3?
           log 'Mp3 support for this browser is enabled'
         else
@@ -187,14 +186,14 @@
           $("#listener-#{listener.id}").animateHighlight @highlightColor
         , scheduledTimeout
 
-    play: (soundId) =>
-      return unless @soundEnabled
+    play: (sound) =>
+      return unless @soundEnabled or sound[@soundFormat]
 
-      log "Playing sound #{getUrlForClient() + sounds[soundId]}"
+      log "Playing sound #{@getUrlForClient() + sound[@soundFormat]}"
 
       # TODO: Recycle finished audio objects: $(music).bind("ended", function(){ ... });
       audio = new Audio()
-      audio.src = @getUrlForClient() + sounds[soundId]
+      audio.src = @getUrlForClient() + sound[@soundFormat]
       audio.play()
 
       $(audio).bind 'ended', ->

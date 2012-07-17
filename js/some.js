@@ -107,6 +107,7 @@
         this.password = void 0;
         this.serverTimedelta = 0;
         this.paused = false;
+        this.soundFormat = 'mp3';
         $.extend(true, this, $.some.defaults, options);
         this.alertsContainer = $('#' + this.alertsContainerId);
       }
@@ -155,7 +156,7 @@
       };
 
       SonicMetricsClient.prototype.init = function() {
-        var sound, src, storageData, _ref, _ref1, _ref2;
+        var storageData, _ref, _ref1, _ref2;
         if (this.hasLocalStorage()) {
           storageData = JSON.parse(localStorage.getItem('sonicMetricsData'));
           if (storageData) {
@@ -178,11 +179,7 @@
         if (this.soundEnabled) {
           if ((typeof Modernizr !== "undefined" && Modernizr !== null ? (_ref1 = Modernizr.audio) != null ? _ref1.ogg : void 0 : void 0) != null) {
             log('Ogg support for this browser is enabled');
-            for (sound in sounds) {
-              src = sounds[sound];
-              sounds[sound] = src.replace(/mp3/g, 'ogg');
-            }
-            log(sounds);
+            this.soundFormat = 'ogg';
           } else if ((typeof Modernizr !== "undefined" && Modernizr !== null ? (_ref2 = Modernizr.audio) != null ? _ref2.mp3 : void 0 : void 0) != null) {
             log('Mp3 support for this browser is enabled');
           } else {
@@ -276,14 +273,14 @@
         }, scheduledTimeout);
       };
 
-      SonicMetricsClient.prototype.play = function(soundId) {
+      SonicMetricsClient.prototype.play = function(sound) {
         var audio;
-        if (!this.soundEnabled) {
+        if (!(this.soundEnabled || sound[this.soundFormat])) {
           return;
         }
-        log("Playing sound " + (getUrlForClient() + sounds[soundId]));
+        log("Playing sound " + (this.getUrlForClient() + sound[this.soundFormat]));
         audio = new Audio();
-        audio.src = this.getUrlForClient() + sounds[soundId];
+        audio.src = this.getUrlForClient() + sound[this.soundFormat];
         audio.play();
         return $(audio).bind('ended', function() {
           return $(this).remove();
