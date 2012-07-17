@@ -506,7 +506,7 @@
         duration = this.duration - delay;
         startColor = dot.initial.color;
         startRadius = dot.initial.radius;
-        endColor = new Color(this.color.rgbString()).mix(startColor, d / this.eventRadius * this.weight);
+        endColor = new Color(this.color.rgbString()).mix(startColor, d / this.eventRadius * (1 - this.weight));
         endRadius = (this.smallimap.dotRadius - startRadius) * this.weight / (d + 1) + startRadius;
         if (duration > 0) {
           this.enqueue(new DelayEffect(dot, delay, {

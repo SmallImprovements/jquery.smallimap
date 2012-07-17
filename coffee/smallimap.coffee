@@ -308,7 +308,7 @@
       duration = @duration - delay
       startColor = dot.initial.color
       startRadius = dot.initial.radius
-      endColor = new Color(@color.rgbString()).mix(startColor, d/@eventRadius*@weight)
+      endColor = new Color(@color.rgbString()).mix(startColor, d/@eventRadius*(1-@weight))
       endRadius = (@smallimap.dotRadius - startRadius)*@weight/(d+1) + startRadius
       if duration > 0
         @enqueue new DelayEffect(dot, delay,
