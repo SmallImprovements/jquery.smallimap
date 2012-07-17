@@ -268,13 +268,13 @@
 
     initEventsForDot: (nx, ny, d, dot) =>
       ratio = Math.sqrt(d/@eventRadius*@weight)
-      delay = @duration * ratio / 2
+      delay = @duration/9 * ratio
       fadeInDuration = @duration/9 * (1 - ratio)
       fadeOutDuration = @duration*8/9 * (1 - ratio)
       startColor = dot.initial.color
       startRadius = dot.initial.radius
       endColor = new Color(@color.rgbString()).mix(startColor, ratio)
-      endRadius = (@smallimap.dotRadius - startRadius)*@weight/(d+1) + startRadius
+      endRadius = (@smallimap.dotRadius - startRadius)*(1 - ratio) + startRadius
       if fadeInDuration > 0
         @enqueue new DelayEffect(dot, delay,
           callback: =>
@@ -286,20 +286,17 @@
                 @enqueue new ColorEffect(dot, fadeOutDuration,
                   startColor: endColor
                   endColor: startColor
-                  easing: easing.inverse(easing.quadratic)
+                  easing: Math.sqrt
                 )
             )
+            @enqueue new RadiusEffect(dot, fadeInDuration,
+              startRadius: startRadius
+              endRadius: endRadius
+              easing: easing.linear
+              callback: =>
+                @enqueue new RadiusEffect(dot, fadeOutDuration, { startRadius: endRadius, endRadius: startRadius })
+            )
         )
-        #@enqueue new DelayEffect(dot, delay,
-        # callback: =>
-        #   @enqueue new RadiusEffect(dot, duration/9,
-        #     startRadius: startRadius
-        #     endRadius: endRadius
-        #     easing: easing.cubic
-        #     callback: =>
-        #       @enqueue new RadiusEffect(dot, duration*8/9, { startRadius: endRadius, endRadius: startRadius })
-        #   )
-        #)
 
   class LensEvent extends GeoEvent
     constructor: (smallimap, options) ->
