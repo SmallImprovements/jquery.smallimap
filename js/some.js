@@ -349,18 +349,24 @@
       };
 
       SonicMetricsClient.prototype.getEventsForListener = function(listener) {
-        var _this = this;
+        var requestData,
+          _this = this;
         log("Requesting events for listener " + listener.name);
-        return $.getJSON(this.getUrlForPath(this.getEventsPath, true), {
-          username: this.username,
-          password: this.password,
+        requestData = {
           subject: listener.subject,
           category: listener.category,
           action: listener.action,
           label: listener.label,
-          lastkey: this.useLastKeyOnRequests ? listener.lastkey : '',
           start: this.getCurrentTime() - this.pollingInterval - this.serverTimedelta
-        }, function(data) {
+        };
+        if (this.requireLogin) {
+          requestData.username = this.username;
+          requestData.password = this.password;
+        }
+        if (this.useLastKeyOnRequests) {
+          requestData.lastkey = listener.lastkey;
+        }
+        return $.getJSON(this.getUrlForPath(this.getEventsPath, true), requestData, function(data) {
           var event, lastEventTimestamp, scheduledTimeout, timeoutOffset, _i, _len, _results;
           if (!data) {
             return;
