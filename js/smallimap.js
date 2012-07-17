@@ -5,7 +5,7 @@
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   (function($) {
-    var BlipEvent, ColorEffect, DelayEffect, Effect, Event, GeoAreaEvent, GeoEvent, LensEvent, MapIcon, RadiusEffect, Smallimap, easing;
+    var BlipEvent, ColorEffect, DelayEffect, Effect, Event, GeoAreaEvent, GeoEvent, LensEvent, MapDot, MapIcon, RadiusEffect, Smallimap, easing;
     $.si || ($.si = {});
     $.si.smallimap = {
       version: '0.1',
@@ -43,10 +43,6 @@
 
         this.triggerOverlay = __bind(this.triggerOverlay, this);
 
-        this.setColor = __bind(this.setColor, this);
-
-        this.setRadius = __bind(this.setRadius, this);
-
         this.reset = __bind(this.reset, this);
 
         this.markDirty = __bind(this.markDirty, this);
@@ -60,8 +56,6 @@
         this.convertToWorldX = __bind(this.convertToWorldX, this);
 
         this.colorFor = __bind(this.colorFor, this);
-
-        this.dot = __bind(this.dot, this);
 
         this.generateGrid = __bind(this.generateGrid, this);
 
@@ -125,33 +119,10 @@
         for (x = _i = 0, _ref = width - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; x = 0 <= _ref ? ++_i : --_i) {
           for (y = _j = 0, _ref1 = height - 1; 0 <= _ref1 ? _j <= _ref1 : _j >= _ref1; y = 0 <= _ref1 ? ++_j : --_j) {
             grid[x] || (grid[x] = []);
-            grid[x][y] = this.dot(x, y, this.landinessOf(x, y));
+            grid[x][y] = new MapDot(this, x, y, this.landinessOf(x, y));
           }
         }
         return grid;
-      };
-
-      Smallimap.prototype.dot = function(x, y, landiness) {
-        var newDot,
-          _this = this;
-        newDot = {
-          x: x,
-          y: y,
-          landiness: landiness,
-          initial: {
-            color: this.colorFor(this.xToLong(x), this.yToLat(y), landiness),
-            radius: this.dotRadius * 0.64
-          },
-          target: {},
-          dirty: true,
-          setRadius: function(radius) {
-            return _this.setRadius(x, y, radius);
-          },
-          setColor: function(color) {
-            return _this.setColor(x, y, color);
-          }
-        };
-        return newDot;
       };
 
       Smallimap.prototype.longToX = function(longitude) {
@@ -237,28 +208,6 @@
         return this.markDirty(x, y);
       };
 
-      Smallimap.prototype.setRadius = function(x, y, r) {
-        var target;
-        target = this.grid[x][y].target;
-        if (target.radius) {
-          target.radius = (target.radius + r) / 2;
-        } else {
-          target.radius = r;
-        }
-        return this.markDirty(x, y);
-      };
-
-      Smallimap.prototype.setColor = function(x, y, color) {
-        var target;
-        target = this.grid[x][y].target;
-        if (target.color) {
-          target.color = target.color.mix(color);
-        } else {
-          target.color = color;
-        }
-        return this.markDirty(x, y);
-      };
-
       Smallimap.prototype.triggerOverlay = function() {
         var push, y, _i, _ref, _results,
           _this = this;
@@ -271,7 +220,7 @@
             var _i, _ref, _results;
             _results = [];
             for (y = _i = 0, _ref = _this.height - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; y = 0 <= _ref ? ++_i : --_i) {
-              _results.push(_this.setRadius(x, y, r));
+              _results.push(_this.grid[x][y].setRadius(r));
             }
             return _results;
           };
@@ -584,6 +533,46 @@
       return LensEvent;
 
     })(GeoEvent);
+    MapDot = (function() {
+
+      function MapDot(smallimap, x, y, landiness) {
+        this.smallimap = smallimap;
+        this.x = x;
+        this.y = y;
+        this.landiness = landiness;
+        this.setColor = __bind(this.setColor, this);
+
+        this.setRadius = __bind(this.setRadius, this);
+
+        this.target = {};
+        this.dirty = true;
+        this.initial = {
+          color: this.smallimap.colorFor(this.smallimap.xToLong(this.x), this.smallimap.yToLat(this.y), this.landiness),
+          radius: this.smallimap.dotRadius * 0.64
+        };
+      }
+
+      MapDot.prototype.setRadius = function(radius) {
+        if (this.target.radius) {
+          this.target.radius = (this.target.radius + radius) / 2;
+        } else {
+          this.target.radius = radius;
+        }
+        return this.smallimap.markDirty(this.x, this.y);
+      };
+
+      MapDot.prototype.setColor = function(color) {
+        if (this.target.color) {
+          this.target.color = this.target.color.mix(color);
+        } else {
+          this.target.color = color;
+        }
+        return this.smallimap.markDirty(this.x, this.y);
+      };
+
+      return MapDot;
+
+    })();
     MapIcon = (function() {
 
       function MapIcon(mapContainer, title, label, iconMarker, iconUrl, x, y) {
@@ -602,10 +591,20 @@
       }
 
       MapIcon.prototype.init = function() {
-        var iconHtml,
+        var hintContent, iconHtml,
           _this = this;
-        iconHtml = "<div class=\"smallipop smallimap-mapicon\">\n  <img src=\"" + this.iconMarker + "\" alt=\"" + this.title + "\"/>\n  <div class=\"smallipopHint\">\n    <img class=\"smallimap-icon\" src=\"" + this.iconUrl + "\"/>\n    <p class=\"smallimap-icon-label\">" + this.label + "</p>\n    <span class=\"smallimap-icon-title\">" + this.title + "</span>\n  </div>\n</div>";
+        iconHtml = "<div class=\"smallipop smallimap-mapicon\">\n  <img src=\"" + this.iconMarker + "\" alt=\"" + this.title + "\"/>\n  <div class=\"smallipopHint\"></div>\n</div>";
         this.iconObj = $(iconHtml);
+        hintContent = this.iconObj.children('div');
+        if (this.iconUrl) {
+          hintContent.append("<img class=\"smallimap-icon\" src=\"" + this.iconUrl + "\"/>");
+        }
+        if (this.label) {
+          hintContent.append("<p class=\"smallimap-icon-label\">" + this.label + "</p>");
+        }
+        if (this.title) {
+          hintContent.append("<span class=\"smallimap-icon-title\">" + this.title + "</span>");
+        }
         this.iconObjImage = this.iconObj.children('img');
         return this.iconObjImage.load(function() {
           _this.width = _this.iconObjImage.get(0).width || 24;
