@@ -15,8 +15,8 @@
         width: 1000,
         height: 500,
         colors: {
-          lights: ["#fdf6e3", "#fafafa", "#dddddd", "#93a1a1", "#839496"],
-          darks: ["#002b36", "#073642", "#586e75", "#657b83"],
+          lights: ["#fdf6e3", "#fafafa", "#dddddd", "#cccccc", "#bbbbbb"],
+          darks: ["#444444", "#666666", "#888888", "#aaaaaa"],
           land: {
             day: function(smallimap) {
               return smallimap.colors.lights.slice(1).concat(smallimap.colors.darks.slice(1).reverse());
@@ -502,7 +502,7 @@
       BlipEvent.prototype.initEventsForDot = function(nx, ny, d, dot) {
         var delay, duration, endColor, endRadius, startColor, startRadius,
           _this = this;
-        delay = this.duration * d / this.eventRadius;
+        delay = this.duration * d / (this.eventRadius + 1);
         duration = this.duration - delay;
         startColor = dot.initial.color;
         startRadius = dot.initial.radius;

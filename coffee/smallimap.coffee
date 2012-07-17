@@ -9,8 +9,8 @@
       width: 1000
       height: 500
       colors:
-        lights: ["#fdf6e3", "#fafafa", "#dddddd", "#93a1a1", "#839496"]
-        darks: ["#002b36", "#073642", "#586e75", "#657b83"]
+        lights: ["#fdf6e3", "#fafafa", "#dddddd", "#cccccc", "#bbbbbb"]
+        darks: ["#444444", "#666666", "#888888", "#aaaaaa"]
         land:
           day: (smallimap) ->
             smallimap.colors.lights.slice(1).concat(smallimap.colors.darks.slice(1).reverse())
@@ -304,7 +304,7 @@
       @weight = options.weight || 1
 
     initEventsForDot: (nx, ny, d, dot) =>
-      delay = @duration * d/@eventRadius
+      delay = @duration * d/(@eventRadius + 1)
       duration = @duration - delay
       startColor = dot.initial.color
       startRadius = dot.initial.radius
