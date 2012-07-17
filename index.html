@@ -43,8 +43,8 @@
 
           var eventColor,
               eventWeight = 0.9,
-              eventRadius = 6;
-              eventDuration = 2000;
+              eventRadius = 4;
+              eventDuration = 1500;
 
           switch (event.category) {
             case 'appraisal':
@@ -71,7 +71,7 @@
               longitude: event.longitude,
               color: eventColor,
               weight: eventWeight,
-              length: eventDuration,
+              duration: eventDuration,
               radius: eventRadius
             });
             smallimap.enqueueEvent(newEvent);
@@ -90,6 +90,11 @@
               log("Adding icon for " + client);
               smallimap.addMapIcon(client.name, client.quote, 'img/marker.png', 'img/si.png', client.longitude, client.latitude);
             }
+
+            // Test icons
+            smallimap.addMapIcon('Sample Company 1', 'Bestest company ever!', 'img/marker.png', 'img/disqus.png', -68, -32);
+            smallimap.addMapIcon('Sample Company 2', 'Most bestest company ever, I swear!', 'img/marker.png', 'img/quiksilver.png', 32, -27);
+            smallimap.addMapIcon('Sample Company 3', 'I love it!', 'img/marker.png', 'img/redballoon.png', 82, 42);
           });
         }
 
