@@ -78,11 +78,11 @@ body {
 }
 
 #smallimap {
-  -webkit-box-shadow: 0 1px 7px rgba(0, 0, 0, 0.3);
-  -moz-box-shadow: 0 1px 7px rgba(0, 0, 0, 0.3);
-  -ms-box-shadow: 0 1px 7px rgba(0, 0, 0, 0.3);
-  -o-box-shadow: 0 1px 7px rgba(0, 0, 0, 0.3);
-  box-shadow: 0 1px 7px rgba(0, 0, 0, 0.3);
+  -webkit-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) inset;
+  -moz-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) inset;
+  -ms-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) inset;
+  -o-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) inset;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) inset;
   -webkit-border-radius: 5px;
   -moz-border-radius: 5px;
   -ms-border-radius: 5px;
@@ -93,9 +93,10 @@ body {
   background-image: -ms-linear-gradient(#fafaf5 60%, #f1f0dd);
   background-image: -o-linear-gradient(#fafaf5 60%, #f1f0dd);
   background-image: linear-gradient(#fafaf5 60%, #f1f0dd);
+             
+  padding: 5px;
 }
 #smallimap canvas {
-  margin: 5px;
   display: block;
 }
 
