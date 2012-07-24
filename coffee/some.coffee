@@ -1,10 +1,15 @@
 ###!
-  Sound Metrics client file
-  www.sonicmetrics.com
+  Sound Metrics client
+  http://www.sonicmetrics.com
+
+  Licensed under the MIT (http://www.opensource.org/licenses/mit-license.php) license.
+
+  @author Sebastian Helzle (sebastian@helzle.net)
 ###
 
 (($) ->
   $.some ||=
+    version: '0.2.0'
     debug: true
     defaults:
       sourceId: 'SonicMetricClient'
