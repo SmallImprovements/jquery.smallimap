@@ -1,5 +1,5 @@
 ###!
-  Sound Metrics client
+  Sonic Metrics client
   http://www.sonicmetrics.com
 
   Licensed under the MIT (http://www.opensource.org/licenses/mit-license.php) license.
