@@ -1,8 +1,17 @@
+###!
+Smallimap
+Copyright (c) 2012 Small Improvements (http://www.small-improvements.com)
+
+Licensed under the MIT (http://www.opensource.org/licenses/mit-license.php) license.
+
+@author Sebastian Helzle (sebastian@small-improvements.com)
+@author Tim Taubner (tim@small-improvements.com)
+###
 
 (($) ->
   $.si ||= {}
   $.si.smallimap =
-    version: '0.1'
+    version: '0.1.0'
     defaults:
       dotRadius: 4
       fps: 20
@@ -274,20 +283,24 @@
       super smallimap, options
       @color = new Color(options.color or "#336699")
       @duration = options.duration or 2048
-      @weight = options.weight || 0.5
+      @weight = options.weight or 0.5
 
     initEventsForDot: (nx, ny, d, dot) =>
-      ratio = Math.sqrt(d/@eventRadius*@weight)
-      delay = @duration/9 * ratio
-      fadeInDuration = @duration/9 * (1 - ratio)
-      fadeOutDuration = @duration*8/9 * (1 - ratio)
+      ratio = Math.sqrt(d / @eventRadius * @weight)
+      delay = @duration / 9 * ratio
+
+      fadeInDuration = @duration / 9 * (1 - ratio)
+      fadeOutDuration = @duration * 8 / 9 * (1 - ratio)
+
       startColor = dot.initial.color
-        c
       endColor = new Color(@color.rgbString()).mix(startColor, ratio*ratio)
+
+      startRadius = dot.initial.radius
       if(startRadius >= @smallimap.dotRadius * 0.5)
         endRadius = startRadius - startRadius*0.5*(1 - ratio)
       else
         endRadius = (@smallimap.dotRadius - startRadius)*(1 - ratio) + startRadius
+
       if fadeInDuration > 0
         @enqueue new DelayEffect(dot, delay,
           callback: =>
