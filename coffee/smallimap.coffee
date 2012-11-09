@@ -11,12 +11,13 @@ Licensed under the MIT (http://www.opensource.org/licenses/mit-license.php) lice
 (($) ->
   $.si ||= {}
   $.si.smallimap =
-    version: '0.1.0'
+    version: '0.2.0'
     defaults:
       dotRadius: 4
       fps: 20
       width: 1000
       height: 500
+      showNight: true
       colors:
         lights: ["#fdf6e3", "#fafafa", "#dddddd", "#cccccc", "#bbbbbb"]
         darks: ["#444444", "#666666", "#888888", "#aaaaaa"]
@@ -96,20 +97,20 @@ Licensed under the MIT (http://www.opensource.org/licenses/mit-license.php) lice
       darkness = landiness * landiness
       now = new Date()
       sunSet = new SunriseSunset(now.getYear(), now.getMonth() + 1, now.getDate(), latitude, longitude)
+
       landColors = @colors.land.day(@)
       idx = Math.floor(darkness * (landColors.length - 2))
-      if sunSet.isDaylight(now.getHours()) or latitude >= 69
+      if sunSet.isDaylight(now.getHours()) or not @showNight# or latitude >= 69
         new Color(landColors[idx])
       else
         new Color(landColors[idx + 1])
-      #new Color("#333333")
 
     radiusFor: (longitude, latitude, landiness) =>
       now = new Date()
       sunSet = new SunriseSunset(now.getYear(), now.getMonth() + 1, now.getDate(), latitude, longitude)
 
       # if lat >= 69 the northpole should get it well deserved sunshine
-      if sunSet.isDaylight(now.getHours()) or latitude >= 69
+      if sunSet.isDaylight(now.getHours()) or not @showNight# or latitude >= 69
         @dotRadius * Math.max(0.2, landiness) * 0.6
       else
         @dotRadius * Math.max(0.25, landiness) * 0.78
@@ -133,7 +134,7 @@ Licensed under the MIT (http://www.opensource.org/licenses/mit-license.php) lice
           totalCount += 1
           existsCount += 1 if @world[i] and @world[i][j]
 
-      return existsCount / totalCount
+      existsCount / totalCount
 
     render: (x, y, millis) =>
       dot = @grid[x][y]
@@ -258,8 +259,8 @@ Licensed under the MIT (http://www.opensource.org/licenses/mit-license.php) lice
   class GeoEvent extends Event
     constructor: (smallimap, options) ->
       super smallimap, options
-      @latitude = options.latitude
-      @longitude = options.longitude
+      @latitude = parseFloat options.latitude
+      @longitude = parseFloat options.longitude
       @x = @smallimap.longToX @longitude
       @y = @smallimap.latToY @latitude
 
@@ -297,9 +298,9 @@ Licensed under the MIT (http://www.opensource.org/licenses/mit-license.php) lice
 
       startRadius = dot.initial.radius
       if(startRadius >= @smallimap.dotRadius * 0.5)
-        endRadius = startRadius - startRadius*0.5*(1 - ratio)
+        endRadius = startRadius - startRadius * 0.5 * (1 - ratio)
       else
-        endRadius = (@smallimap.dotRadius - startRadius)*(1 - ratio) + startRadius
+        endRadius = (@smallimap.dotRadius - startRadius) * (1 - ratio) + startRadius
 
       if fadeInDuration > 0
         @enqueue new DelayEffect(dot, delay,
@@ -323,7 +324,7 @@ Licensed under the MIT (http://www.opensource.org/licenses/mit-license.php) lice
                 @enqueue new RadiusEffect(dot, fadeOutDuration,
                   startRadius: endRadius
                   endRadius: startRadius
-                  easing: Math.sqrt
+                  easing: Math.quadratic
                 )
             )
         )
@@ -358,7 +359,7 @@ Licensed under the MIT (http://www.opensource.org/licenses/mit-license.php) lice
       @target = {}
       @dirty = true
       @initial =
-        color: new Color("#333") #@smallimap.colorFor @smallimap.xToLong(@x), @smallimap.yToLat(@y), @landiness
+        color: new Color("#333")
         radius: @smallimap.radiusFor @smallimap.xToLong(@x), @smallimap.yToLat(@y), @landiness
 
     setRadius: (radius) =>
@@ -390,7 +391,7 @@ Licensed under the MIT (http://www.opensource.org/licenses/mit-license.php) lice
       """
       @iconObj = $ iconHtml
 
-      hintContent = @iconObj.children 'div'
+      hintContent = @iconObj.children '.smallipopHint'
       if @iconUrl
         hintContent.append "<img class=\"smallimap-icon\" src=\"#{@iconUrl}\"/>"
       if @label
@@ -400,12 +401,20 @@ Licensed under the MIT (http://www.opensource.org/licenses/mit-license.php) lice
 
       @iconObjImage = @iconObj.children 'img'
       @iconObjImage.load =>
-        @width = @iconObjImage.get(0).width or 24
-        @height = @iconObjImage.get(0).height or 24
+        @width = @iconObjImage[0].width or 24
+        @height = @iconObjImage[0].height or 24
 
         @iconObjImage.css
           width: '100%'
           height: '100%'
+
+        # Get icon size
+        if @iconUrl
+          hintContent.children('.smallimap-icon').load ->
+            hintIcon = $ @
+            hintIcon.attr
+              width: hintIcon[0].width
+              height: hintIcon[0].height
 
         @iconObj.css
           position: 'absolute'
@@ -416,7 +425,7 @@ Licensed under the MIT (http://www.opensource.org/licenses/mit-license.php) lice
 
         @mapContainer.append @iconObj
         @iconObj.smallipop
-          theme: 'white'
+          theme: 'blue'
           hideTrigger: true
           popupDistance: 10
           popupYOffset: 10
@@ -449,7 +458,7 @@ Licensed under the MIT (http://www.opensource.org/licenses/mit-license.php) lice
   $.si.smallimap.easing = easing
 
   $.fn.smallimap = (options={}) ->
-    options = $.extend {}, $.si.smallimap.defaults, options
+    options = $.extend true, {}, $.si.smallimap.defaults, options
 
     return @.each ->
       # Initialize each trigger, create id and bind events

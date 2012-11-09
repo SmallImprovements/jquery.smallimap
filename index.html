@@ -1,28 +1,102 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <title>SonicMetrics Demo</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>SI Metricstest</title>
-    <link rel="stylesheet" href="css/jquery.smallipop-0.1.6.min.css" type="text/css" media="all" />
-    <link rel="stylesheet" href="css/main.css" type="text/css" media="all" />
+    <link rel="stylesheet" href="css/contrib/jquery.smallipop-0.3.0.min.css" type="text/css" media="all" />
+    <link rel="stylesheet" href="css/contrib/animate.min.css" type="text/css" media="all" />
+    <link rel="stylesheet" href="css/screen.css" type="text/css" media="all" />
   </head>
   <body>
-    <div class="main">
-      <h1>Smallimap Demo</h1>
-      <button onclick="runSmallimapTest();">Start test</button>
-      <div id="smallimap"></div>
+    <div class="pageHeader hasShadow">
+      <h1>Smallimap</h1>
+
+      <p>
+        <b>Version 0.2.0</b> -
+        Created by <a href="http://www.sebastianhelzle.net" target="_blank" title="Sebastian Helzle Portfolio">Sebastian Helzle</a>
+        for <a href="http://www.small-improvements.com" target="_blank" title="Small Improvements - 360 Feedback">Small Improvements</a>
+      </p>
+      <br/>
+
+      <ul class="tabs">
+        <li><a href="/" title="Projects overview">Home</a></li>
+        <li><a href="/jquery.smallipop" title="jQuery smallipop - A tooltip plugin">Smallipop</a></li>
+        <li><a href="/jquery.rondell" title="jQuery rondell - A graphical plugin for carousels and more">Rondell</a></li>
+        <li class="selected"><a href="/jquery.smallimap" title="jQuery smallimap - A graphical plugin for carousels and more">Smallimap</a></li>
+      </ul>
+    </div>
+
+    <div class="page hasShadow">
+      <h2>Cooming soon!</h2>
+
+      <p>
+        An interactive map plugin for <a href="http://www.jquery.com" target="_blank" title="jQuery javascript library">jQuery</a>.
+      </p>
+
+      <br/>
+
+      <a href="https://github.com/Sebobo/jquery.smallimap" target="_blank" title="Get the smallimap source at github" class="btn smallipop">
+        Visit smallimap at github
+      </a>
+
+      <a id="startDemoButton" class="btn success smallipop" href="#" title="A short tour about the features of smallimap">Click here to run the demo</a>
+      <br/>
+      <hr/>
+      <div style="position: relative">
+        <div id="smallimap" class="smallipop smallipopTour" data-smallipop-tour-index="1">
+          <span class="smallipopHint">
+            <p>This is the main map canvas.</p>
+            <p>
+              Random events are created on the map as example. You can use this feature to show real time events which contain latitude and longitude information.
+            </p>
+            <p>Also see <a href="http://www.sonicmetrics.com" target="_blank">SonicMetrics</a> as live example.</p>
+          </span>
+        </div>
+
+        <div class="smallipop" data-smallipop-tour-index="2" style="position: absolute; left:348px; top: 280px;" data-smallipop-preferred-position="bottom">
+          &nbsp;
+          <span class="smallipopHint">
+            Hover this icon to see details. <br/>
+            This can be used to show your companys clients for example.
+          </span>
+        </div>
+
+        <div class="smallipop" data-smallipop-tour-index="3" style="position: absolute; left:730px; top: 290px;" data-smallipop-preferred-position="left">
+          &nbsp;
+          <span class="smallipopHint">
+            <p>
+              The size of each dot represents the amount of 'land' at this point on the world.
+            </p>
+            <p>
+              The 'night'-mode is active. So the part of the world, where everyone sleeps looks a bit darker. This is achieved by rendering the dots a little bit bigger.
+            </p>
+          </span>
+        </div>
+
+        <div class="smallipop" data-smallipop-tour-index="10" style="position: absolute; left:700px; top: 0px;" data-smallipop-preferred-position="top">
+          &nbsp;
+          <span class="smallipopHint">
+            <p>
+              Smallimap is currently in an early stage of development.
+            </p>
+            <p>
+              Follow us on <a href="https://github.com/Sebobo/jquery.smallimap" title="Smallimap at github" target="_blank">github</a> to stay updated.
+            </p>
+          </span>
+        </div>
+      </div>
     </div>
 
     <script src="js/contrib/jquery-1.8.2.min.js"></script>
     <script src="js/contrib/modernizr-2.6.0.min.js"></script>
-    <script src="js/contrib/jquery.smallipop-0.1.6.min.js" type="text/javascript"></script>
+    <script src="js/contrib/jquery.smallipop-0.3.0.min.js" type="text/javascript"></script>
     <script src="js/contrib/suntimes.js"></script>
     <script src="js/contrib/renderframe.js"></script>
     <script src="js/contrib/color-0.4.1.js" type="text/javascript"></script>
+
     <script src="js/world.js" type="text/javascript"></script>
     <script src="js/smallimap.js" type="text/javascript"></script>
-    <script src="js/some.js" type="text/javascript"></script>
-    <script src="js/simap.js" type="text/javascript"></script>
+    <script src="js/demo.js" type="text/javascript"></script>
   </body>
 </html>
