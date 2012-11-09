@@ -1,5 +1,5 @@
 ###!
-  Cakefile for Sound Metrics
+  Cakefile for Smallimap
   @author Sebastian Helzle (sebastian@helzle.net or @sebobo)
 
   Usage:
