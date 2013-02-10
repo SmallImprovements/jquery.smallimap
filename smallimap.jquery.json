@@ -1,0 +1,39 @@
+{
+    "name": "smallimap",
+    "version": "0.3.0",
+    "title": "jQuery Smallimap",
+    "description": "A versatile jQuery plugin for displaying beautiful world maps",
+    "homepage": "https://github.com/Sebobo/jquery.smallipop",
+    "author": {
+        "name": "Sebastian Helzle",
+        "email": "sebastian@helzle.net",
+        "url": "https://github.com/sebobo"
+    },
+    "licenses": [
+        {
+            "type": "MIT",
+            "url": "https://raw.github.com/SmallImprovements/jquery.smallimap/master/MIT-LICENSE.txt"
+        }
+    ],
+    "dependencies": {
+        "jquery": ">=1.5.2"
+    },
+    "maintainers": [
+        {
+            "name": "Sebastian Helzle",
+            "email": "sebastian@helzle.net",
+            "url": "http://www.sebastianhelzle.net"
+        },
+        {
+            "name": "Tim Taubner",
+            "email": "tim@small-improvements.com"
+        }
+    ],
+    "keywords": [
+        "world",
+        "map",
+        "ui"
+    ],
+    "bugs": "https://github.com/SmallImprovements/jquery.smallimap/issues",
+    "docs": "https://github.com/SmallImprovements/jquery.smallimap"
+}

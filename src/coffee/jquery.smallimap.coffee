@@ -1,6 +1,6 @@
 ###!
 Smallimap
-Copyright (c) 2012 Small Improvements (http://www.small-improvements.com)
+Copyright (c) 2012-2013 Small Improvements (http://www.small-improvements.com)
 
 Licensed under the MIT (http://www.opensource.org/licenses/mit-license.php) license.
 
@@ -11,7 +11,7 @@ Licensed under the MIT (http://www.opensource.org/licenses/mit-license.php) lice
 (($) ->
   $.si ||= {}
   $.si.smallimap =
-    version: '0.2.0'
+    version: '0.3.0'
     defaults:
       dotRadius: 4
       fps: 20
